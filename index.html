@@ -1,619 +1,1183 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modularte Studio - Editor Cinematográfico</title>
-    
-    <!-- Importar Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Importar Bibliotecas React -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Importar Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>Glory Hole - Dark Cinematic Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Syne:wght@600;800&display=swap');
 
-    <!-- Fontes da Marca -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700;900&display=swap" rel="stylesheet">
+        :root {
+            --blood-red: #cc0022;
+            --dark-blood: #55000e;
+            --muted-chrome: #9a9192; /* Cinza metálico escuro, não branco */
+            --dark-bg: #030001;
+            --bpm-ms: 521.73ms; 
+            --half-bpm: 260.86ms;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--dark-bg); color: var(--muted-chrome);
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            background-image: radial-gradient(circle at center, #1a0004 0%, #000 100%);
+        }
+
+        /* --- UI Controls --- */
+        #controls-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 200; transition: opacity 0.4s;
+            backdrop-filter: blur(10px);
+        }
+        .control-box {
+            padding: 40px; border: 1px solid var(--dark-blood); text-align: center;
+            background: rgba(20, 0, 5, 0.8);
+            box-shadow: 0 0 50px rgba(204, 0, 34, 0.1);
+            position: relative;
+        }
+        .control-box::before { content: '⌖'; position: absolute; top: 10px; left: 15px; color: var(--blood-red); opacity: 0.5; }
+        .control-box::after { content: '⌖'; position: absolute; bottom: 10px; right: 15px; color: var(--blood-red); opacity: 0.5; }
+
+        .control-box h1 { font-family: 'Syne', sans-serif; font-size: 2.2rem; text-transform: uppercase; margin: 0 0 5px 0; color: var(--muted-chrome); letter-spacing: 2px; }
+        .btn-play { margin-top: 25px; background: transparent; color: var(--blood-red); border: 1px solid var(--blood-red); padding: 15px 40px; font-family: 'Syne'; font-weight: 800; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; transition: 0.3s; letter-spacing: 3px; }
+        .btn-play:hover { background: var(--blood-red); color: #000; box-shadow: 0 0 20px var(--blood-red); }
+        .file-input-wrapper { display: flex; flex-direction: column; align-items: center; margin: 15px 0; }
+        .custom-file-upload { display: inline-block; padding: 10px; border-bottom: 1px dashed var(--dark-blood); margin-bottom: 5px; cursor: pointer; font-size: 11px; letter-spacing: 1px; color: #888; transition: 0.3s; }
+        .custom-file-upload:hover { color: var(--blood-red); border-color: var(--blood-red); }
+        input[type="file"] { display: none; }
+
+        /* --- STAGE & BACKGROUND --- */
+        #stage { position: relative; width: 100%; height: 100%; overflow: hidden; perspective: 1000px; }
+
+        .bg-image {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            opacity: 0;
+            filter: grayscale(1) contrast(1.5) brightness(0.25); /* Muito escuro */
+            mix-blend-mode: multiply;
+            transform: scale(1.1) translateZ(-100px);
+            transition: opacity 0.5s ease;
+        }
+        .bg-image.active { opacity: 1; animation: dark-breathe 8s ease-in-out infinite alternate; }
+
+        @keyframes dark-breathe {
+            0% { transform: scale(1.1) translateZ(-100px) rotate(0deg); }
+            100% { transform: scale(1.15) translateZ(-50px) rotate(1deg); }
+        }
+
+        /* --- 3D CYBER GRID --- */
+        .cyber-grid {
+            position: absolute; bottom: -50%; left: -50%; width: 200%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(204, 0, 34, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(204, 0, 34, 0.15) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform-origin: center top;
+            transform: rotateX(75deg) translateZ(-200px);
+            animation: grid-move var(--bpm-ms) linear infinite;
+            z-index: 5; opacity: 0.6; pointer-events: none;
+        }
+        @keyframes grid-move { 100% { background-position: 0 60px; } }
+
+        /* --- OVERLAYS ESCUROS --- */
+        .blood-vignette {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 30%, #050002 90%);
+            z-index: 10; pointer-events: none;
+        }
+
+        .dark-grain {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.15; mix-blend-mode: overlay; z-index: 12; pointer-events: none;
+        }
+
+        /* --- ELEMENTOS FLUTUANTES NO FUNDO --- */
+        #dynamic-elements {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 8; pointer-events: none; overflow: hidden;
+        }
+        .bg-symbol {
+            position: absolute; color: var(--dark-blood); font-family: 'Space Grotesk';
+            opacity: 0; filter: blur(2px); font-size: 20px; font-weight: bold;
+        }
+        @keyframes float-symbol {
+            0% { transform: translateY(50px) scale(0.8) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.4; }
+            80% { opacity: 0.4; }
+            100% { transform: translateY(-100px) scale(1.2) rotate(45deg); opacity: 0; }
+        }
+
+        /* --- MARQUEE DARK --- */
+        .fast-marquee {
+            position: absolute; width: 200%; font-family: 'Syne'; font-size: 8vw; 
+            font-weight: 800; color: transparent; -webkit-text-stroke: 1px rgba(204, 0, 34, 0.15);
+            white-space: nowrap; z-index: 9; opacity: 0.4; pointer-events: none;
+        }
+        .fast-marquee.top { top: 15%; animation: scroll-fast 12s linear infinite; }
+        .fast-marquee.bottom { top: 75%; animation: scroll-fast-reverse 15s linear infinite; }
+        @keyframes scroll-fast { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes scroll-fast-reverse { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+
+        /* --- DARK STROBE (Não cega, escurece) --- */
+        .strobe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--blood-red); z-index: 99; opacity: 0; pointer-events: none;
+            mix-blend-mode: color-burn; /* Escurece a tela e satura de vermelho */
+        }
+        .strobe.active { animation: dark-flash 0.2s ease-out; }
+        @keyframes dark-flash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+
+        /* --- TIPOGRAFIA CINÉTICA E "VIRADINHAS" --- */
+        #lyrics-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50; pointer-events: none; display: flex; padding: 5%; box-sizing: border-box;
+            align-items: center; justify-content: center;
+            transform-style: preserve-3d;
+        }
+
+        .lyric-line {
+            font-family: 'Syne', sans-serif; font-size: 8vw; font-weight: 800; 
+            text-transform: uppercase; line-height: 0.9; color: var(--muted-chrome); 
+            width: 100%; text-align: center; opacity: 0;
+            text-shadow: 5px 5px 0px rgba(10, 0, 0, 0.8), -2px -2px 15px rgba(204, 0, 34, 0.2);
+            will-change: transform, opacity;
+        }
+
+        /* O movimento suave constante que substituiu o tremor */
+        .is-active-line {
+            animation: smooth-drift-rotate 6s ease-in-out infinite alternate !important;
+        }
+        @keyframes smooth-drift-rotate { 
+            0% { transform: translateZ(0px) rotateX(2deg) rotateY(-2deg); filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); } 
+            100% { transform: translateZ(30px) rotateX(-2deg) rotateY(2deg); filter: drop-shadow(0 0 20px rgba(204,0,34,0.3)); } 
+        }
+
+        /* ENTRADAS: Rápidas e com "viradinhas" 3D */
+        .kin-flip-in .lyric-line { animation: kin-flip-anim 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes kin-flip-anim { 0% { transform: rotateX(-80deg) translateZ(-200px); opacity: 0; } 100% { transform: rotateX(0deg) translateZ(0); opacity: 1; } }
+
+        .kin-tilt-slide .lyric-line { animation: kin-tilt-anim 0.2s ease-out forwards; }
+        @keyframes kin-tilt-anim { 0% { transform: translateX(50px) rotate(-10deg); opacity: 0; filter: blur(5px); } 100% { transform: translateX(0) rotate(0deg); opacity: 1; filter: blur(0px); } }
+
+        .kin-zoom-slam .lyric-line { animation: kin-zoom-anim 0.15s ease-out forwards; }
+        @keyframes kin-zoom-anim { 0% { transform: scale(2) rotate(5deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* Estilos de Destaque das Palavras (Dark e Vermelho) */
+        .highlight-solid {
+            color: #000; background: var(--blood-red); padding: 0 15px;
+            display: inline-block; text-shadow: none; box-shadow: 4px 4px 0px #000;
+        }
+        .highlight-outline {
+            color: transparent; -webkit-text-stroke: 2px var(--blood-red);
+            filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.9));
+        }
+
+        /* --- HUD Sutil Escuro --- */
+        .rec-indicator {
+            position: absolute; top: 30px; left: 40px; color: var(--dark-blood);
+            font-family: 'Space Grotesk'; font-weight: bold; font-size: 18px; z-index: 20;
+            animation: dark-pulse-rec 1s steps(2, start) infinite;
+        }
+        .rec-indicator::before { content: '●'; margin-right: 8px; }
+        @keyframes dark-pulse-rec { 0% { opacity: 0.8; } 100% { opacity: 0.2; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- Controls -->
+    <div id="controls-overlay">
+        <div class="control-box">
+            <h1>Glory Hole</h1>
+            <p style="color: #666; font-size: 14px; letter-spacing: 2px; margin-bottom: 25px;">DARK CINEMATIC EDITION</p>
+            
+            <div class="file-input-wrapper">
+                <label for="imageUpload" class="custom-file-upload">1. ADD FOTOS ESCURAS</label>
+                <input id="imageUpload" type="file" accept="image/*" multiple />
+                <span id="img-count" style="font-size: 11px; color: var(--dark-blood); margin-top: 5px;">USANDO TEXTURAS INTERNAS</span>
+            </div>
+
+            <div class="file-input-wrapper">
+                <label for="audioUpload" class="custom-file-upload">2. ADD ÁUDIO (.MP3)</label>
+                <input id="audioUpload" type="file" accept="audio/*" />
+                <span id="audio-status" style="font-size: 11px; color: #555; margin-top: 5px;">MODO SIMULAÇÃO 115BPM</span>
+            </div>
+
+            <button class="btn-play" onclick="startVideo()">ENTRAR NO CLUBE</button>
+        </div>
+    </div>
+
+    <!-- Stage -->
+    <div id="stage">
+        <!-- Imagens -->
+        <div id="image-container"></div>
+        
+        <!-- Elementos de Profundidade 3D -->
+        <div class="cyber-grid"></div>
+        <div id="dynamic-elements"></div>
+        
+        <div class="blood-vignette"></div>
+        <div class="dark-grain"></div>
+
+        <!-- Marquees Escuros e Sutis -->
+        <div class="fast-marquee top">GLORY HOLE ✦ NO WASTING TIME ✦ OBSERVE ✦ DIVINE ✦ GLORY HOLE ✦ </div>
+        <div class="fast-marquee bottom">SCREAM ✦ DARK ✦ CHOKE ✦ ALIVE ✦ SCREAM ✦ DARK ✦ CHOKE ✦ </div>
+        
+        <div class="rec-indicator">REC</div>
+
+        <!-- Efeitos de Drop -->
+        <div class="strobe" id="strobe-layer"></div>
+
+        <!-- Letras Cinéticas -->
+        <div id="lyrics-container">
+            <div class="lyric-line" id="current-lyric"></div>
+        </div>
+    </div>
+
+    <audio id="audio-player"></audio>
+
+<script>
+    // --- SRT DATA ---
+    const srtData = `1
+00:00:02,320 --> 00:00:03,520
+Now i can see you
+
+2
+00:00:03,520 --> 00:00:04,720
+through the glory hole
+
+3
+00:00:05,000 --> 00:00:06,000
+glory hole
+
+4
+00:00:06,200 --> 00:00:06,560
+go!
+
+5
+00:00:06,760 --> 00:00:07,120
+.
+
+6
+00:00:07,320 --> 00:00:07,480
+.
+
+7
+00:00:07,600 --> 00:00:07,760
+.
+
+8
+00:00:07,960 --> 00:00:08,120
+.
+
+9
+00:00:08,440 --> 00:00:08,600
+.
+
+10
+00:00:08,840 --> 00:00:09,000
+.
+
+11
+00:00:09,320 --> 00:00:09,480
+.
+
+12
+00:00:09,760 --> 00:00:09,920
+.
+
+13
+00:00:10,120 --> 00:00:10,280
+.
+
+14
+00:00:10,520 --> 00:00:10,680
+.
+
+15
+00:00:10,960 --> 00:00:11,120
+.
+
+16
+00:00:11,360 --> 00:00:11,520
+.
+
+17
+00:00:11,840 --> 00:00:12,000
+.
+
+18
+00:00:12,280 --> 00:00:12,440
+.
+
+19
+00:00:12,600 --> 00:00:12,760
+.
+
+20
+00:00:12,960 --> 00:00:13,120
+.
+
+21
+00:00:13,360 --> 00:00:13,520
+.
+
+22
+00:00:13,640 --> 00:00:13,800
+.
+
+23
+00:00:13,920 --> 00:00:14,080
+.
+
+24
+00:00:14,240 --> 00:00:14,400
+.
+
+25
+00:00:14,520 --> 00:00:14,680
+.
+
+26
+00:00:14,840 --> 00:00:16,040
+Hey!
+
+27
+00:00:16,800 --> 00:00:18,680
+I've been searching for you
+
+28
+00:00:18,680 --> 00:00:20,360
+all the night
+
+29
+00:00:21,320 --> 00:00:22,720
+I've been dreaming 'bout you
+
+30
+00:00:22,840 --> 00:00:24,240
+all this time
+
+31
+00:00:25,280 --> 00:00:26,480
+I'm so hungry
+
+32
+00:00:26,480 --> 00:00:27,880
+baby tell me why
+
+33
+00:00:29,280 --> 00:00:30,560
+the way you make me
+
+34
+00:00:30,560 --> 00:00:31,120
+scream
+
+35
+00:00:31,120 --> 00:00:32,160
+i feel alive
+
+36
+00:00:32,160 --> 00:00:32,840
+in this club
+
+37
+00:00:32,840 --> 00:00:33,760
+in this club
+
+38
+00:00:33,760 --> 00:00:34,680
+i found you
+
+39
+00:00:34,720 --> 00:00:35,640
+i found you
+
+40
+00:00:35,760 --> 00:00:36,680
+looking at me
+
+41
+00:00:36,880 --> 00:00:38,040
+i was
+
+42
+00:00:38,040 --> 00:00:38,920
+looking at you
+
+43
+00:00:38,920 --> 00:00:39,720
+yeah
+
+44
+00:00:40,200 --> 00:00:41,000
+party don't stop
+
+45
+00:00:41,000 --> 00:00:41,800
+party don't stop
+
+46
+00:00:41,800 --> 00:00:43,280
+people moving around
+
+47
+00:00:43,280 --> 00:00:44,200
+moving around
+
+48
+00:00:44,240 --> 00:00:45,160
+if you want more
+
+49
+00:00:45,280 --> 00:00:46,200
+if you want more
+
+50
+00:00:46,200 --> 00:00:48,000
+i'm standing behind the wall
+
+51
+00:00:48,480 --> 00:00:49,760
+no wasting time
+
+52
+00:00:49,760 --> 00:00:50,720
+just observe
+
+53
+00:00:50,720 --> 00:00:51,240
+that's
+
+54
+00:00:51,240 --> 00:00:52,040
+how i roll
+
+55
+00:00:52,040 --> 00:00:52,960
+your body
+
+56
+00:00:52,960 --> 00:00:53,920
+is so divine
+
+57
+00:00:53,920 --> 00:00:55,160
+you can shove it
+
+58
+00:00:55,160 --> 00:00:56,400
+down my throat
+
+59
+00:00:56,480 --> 00:00:57,280
+i'm high
+
+60
+00:00:57,280 --> 00:00:58,200
+in the dark
+
+61
+00:00:58,200 --> 00:00:59,160
+you gave me
+
+62
+00:00:59,160 --> 00:01:00,400
+so much hope
+
+63
+00:01:01,760 --> 00:01:01,960
+now i can see you
+
+64
+00:01:01,960 --> 00:01:03,160
+through the glory hole
+
+65
+00:01:03,440 --> 00:01:04,440
+glory hole
+
+66
+00:01:04,640 --> 00:01:05,000
+go!
+
+67
+00:01:05,080 --> 00:01:05,440
+go!
+
+68
+00:01:09,160 --> 00:01:10,160
+hole
+
+69
+00:01:10,160 --> 00:01:11,160
+hole
+
+70
+00:01:13,280 --> 00:01:14,120
+Hey!
+
+71
+00:01:14,480 --> 00:01:15,320
+Hey!
+
+72
+00:01:15,320 --> 00:01:17,120
+I've been waiting to see you
+
+73
+00:01:17,120 --> 00:01:18,240
+tonight
+
+74
+00:01:18,240 --> 00:01:19,760
+you toniiii-i-ight
+
+75
+00:01:19,760 --> 00:01:21,160
+i can lick you soo good
+
+76
+00:01:21,280 --> 00:01:22,200
+I won't bite
+
+77
+00:01:22,320 --> 00:01:23,720
+I won't biiiiite
+
+78
+00:01:23,720 --> 00:01:24,920
+there's nothing wrong
+
+79
+00:01:24,920 --> 00:01:26,320
+baby, I can't deny
+
+80
+00:01:26,560 --> 00:01:27,960
+can't denyyyy
+
+81
+00:01:27,960 --> 00:01:29,000
+the way I choke
+
+82
+00:01:29,000 --> 00:01:29,560
+on you
+
+83
+00:01:29,560 --> 00:01:30,600
+it's on my mind
+
+84
+00:01:30,600 --> 00:01:31,280
+in this club
+
+85
+00:01:31,280 --> 00:01:32,200
+in this club
+
+86
+00:01:32,200 --> 00:01:33,120
+i found you
+
+87
+00:01:33,160 --> 00:01:34,080
+i found you
+
+88
+00:01:34,200 --> 00:01:35,120
+looking at me
+
+89
+00:01:35,320 --> 00:01:36,480
+i was
+
+90
+00:01:36,480 --> 00:01:37,360
+looking at you
+
+91
+00:01:37,360 --> 00:01:38,160
+yeah
+
+92
+00:01:38,640 --> 00:01:39,440
+party don't stop
+
+93
+00:01:39,440 --> 00:01:40,240
+party don't stop
+
+94
+00:01:40,240 --> 00:01:41,720
+people moving around
+
+95
+00:01:41,720 --> 00:01:42,640
+moving around
+
+96
+00:01:42,680 --> 00:01:43,600
+if you want more
+
+97
+00:01:43,720 --> 00:01:44,640
+if you want more
+
+98
+00:01:44,640 --> 00:01:46,440
+i'm standing behind the wall
+
+99
+00:01:46,920 --> 00:01:48,200
+no wasting time
+
+100
+00:01:48,200 --> 00:01:49,160
+just observe
+
+101
+00:01:49,160 --> 00:01:49,680
+that's
+
+102
+00:01:49,680 --> 00:01:50,480
+how i roll
+
+103
+00:01:50,480 --> 00:01:51,400
+your body
+
+104
+00:01:51,400 --> 00:01:52,360
+is so divine
+
+105
+00:01:52,360 --> 00:01:53,600
+you can shove it
+
+106
+00:01:53,600 --> 00:01:54,840
+down my throat
+
+107
+00:01:54,920 --> 00:01:55,720
+i'm high
+
+108
+00:01:55,720 --> 00:01:56,640
+in the dark
+
+109
+00:01:56,640 --> 00:01:57,600
+you gave me
+
+110
+00:01:57,600 --> 00:01:58,840
+so much hope
+
+111
+00:01:59,200 --> 00:02:00,400
+now i can see you
+
+112
+00:02:00,400 --> 00:02:01,600
+through the glory hole
+
+113
+00:02:01,880 --> 00:02:02,880
+glory hole
+
+114
+00:02:03,080 --> 00:02:03,440
+glory
+
+115
+00:02:03,520 --> 00:02:03,840
+hole
+
+116
+00:02:03,840 --> 00:02:05,120
+no wasting time
+
+117
+00:02:05,120 --> 00:02:06,080
+just observe
+
+118
+00:02:06,080 --> 00:02:06,600
+that's
+
+119
+00:02:06,600 --> 00:02:07,400
+how i roll
+
+120
+00:02:07,400 --> 00:02:08,080
+hang tight
+
+121
+00:02:08,080 --> 00:02:09,280
+that’s so divine
+
+122
+00:02:09,280 --> 00:02:10,520
+you can shove it
+
+123
+00:02:10,520 --> 00:02:11,760
+down my throat
+
+124
+00:02:11,840 --> 00:02:12,640
+i’m high
+
+125
+00:02:12,640 --> 00:02:13,560
+in the dark
+
+126
+00:02:13,560 --> 00:02:14,520
+you gave me
+
+127
+00:02:14,520 --> 00:02:15,760
+so much hope
+
+128
+00:02:16,120 --> 00:02:17,320
+now i can see you
+
+129
+00:02:17,320 --> 00:02:18,520
+through the glory hole
+
+130
+00:02:18,800 --> 00:02:19,800
+glory hole
+
+131
+00:02:20,000 --> 00:02:20,360
+glory
+
+132
+00:02:20,960 --> 00:02:21,320
+oh
+
+133
+00:02:21,400 --> 00:02:21,760
+oh
+
+134
+00:02:21,880 --> 00:02:22,240
+oh
+
+135
+00:02:22,320 --> 00:02:22,680
+oh
+
+136
+00:02:22,840 --> 00:02:23,200
+oh
+
+137
+00:02:23,440 --> 00:02:23,800
+oh
+
+138
+00:02:24,080 --> 00:02:24,440
+oh
+
+139
+00:02:24,600 --> 00:02:24,960
+hole
+
+140
+00:02:25,080 --> 00:02:25,440
+oh
+
+141
+00:02:25,520 --> 00:02:25,880
+oh
+
+142
+00:02:26,000 --> 00:02:26,360
+oh
+
+143
+00:02:26,440 --> 00:02:26,800
+oh
+
+144
+00:02:26,960 --> 00:02:27,320
+oh
+
+145
+00:02:27,560 --> 00:02:27,920
+oh
+
+146
+00:02:28,200 --> 00:02:28,560
+oh
+
+147
+00:02:28,720 --> 00:02:29,080
+hole
+
+148
+00:02:29,440 --> 00:02:29,800
+oh
+
+149
+00:02:29,880 --> 00:02:30,240
+oh
+
+150
+00:02:30,360 --> 00:02:30,720
+oh
+
+151
+00:02:30,800 --> 00:02:31,160
+oh
+
+152
+00:02:31,320 --> 00:02:31,680
+oh
+
+153
+00:02:31,920 --> 00:02:32,280
+oh
+
+154
+00:02:32,560 --> 00:02:32,920
+oh
+
+155
+00:02:33,080 --> 00:02:33,440
+hole
+
+156
+00:02:33,560 --> 00:02:33,920
+oh
+
+157
+00:02:34,000 --> 00:02:34,360
+oh
+
+158
+00:02:34,480 --> 00:02:34,840
+oh
+
+159
+00:02:34,920 --> 00:02:35,280
+oh
+
+160
+00:02:35,440 --> 00:02:35,800
+oh
+
+161
+00:02:36,040 --> 00:02:36,400
+oh
+
+162
+00:02:36,680 --> 00:02:37,040
+oh
+
+163
+00:02:37,200 --> 00:02:37,560
+hole
+
+164
+00:02:38,240 --> 00:02:38,600
+oh
+
+165
+00:02:38,720 --> 00:02:39,080
+oh
+
+166
+00:02:39,160 --> 00:02:39,520
+oh
+
+167
+00:02:39,680 --> 00:02:40,040
+hm
+
+168
+00:02:40,280 --> 00:02:40,640
+hm
+
+169
+00:02:40,920 --> 00:02:41,280
+hm
+
+170
+00:02:41,440 --> 00:02:41,800
+hole
+
+171
+00:02:42,040 --> 00:02:42,400
+oh
+
+172
+00:02:42,520 --> 00:02:42,880
+oh
+
+173
+00:02:42,960 --> 00:02:43,320
+oh
+
+174
+00:02:43,480 --> 00:02:43,840
+hm
+
+175
+00:02:44,080 --> 00:02:44,440
+hm
+
+176
+00:02:44,720 --> 00:02:45,080
+hm
+
+177
+00:02:45,240 --> 00:02:45,600
+hole
+
+178
+00:02:46,120 --> 00:02:46,480
+oh
+
+179
+00:02:46,600 --> 00:02:46,960
+oh
+
+180
+00:02:47,040 --> 00:02:47,400
+oh
+
+181
+00:02:47,560 --> 00:02:47,920
+hm
+
+182
+00:02:48,160 --> 00:02:48,520
+hm
+
+183
+00:02:48,800 --> 00:02:49,160
+hm
+
+184
+00:02:49,360 --> 00:02:50,560
+i can see you
+
+185
+00:02:50,560 --> 00:02:51,760
+through the glory hole
+
+186
+00:02:52,040 --> 00:02:53,040
+glory hole
+
+187
+00:02:53,240 --> 00:02:53,560
+glory
+
+188
+00:02:53,560 --> 00:02:53,920
+hole`;
+
+    let subtitles = [];
+    let images = [
+        "https://images.unsplash.com/photo-1549887552-cb1071d3e5ca?w=1600&q=80",
+        "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1600&q=80",
+        "https://images.unsplash.com/photo-1571172828691-537446545183?w=1600&q=80",
+        "https://images.unsplash.com/photo-1558317751-bc3ed6f85f72?w=1600&q=80"
+    ];
+    let audioSrc = null;
+    let isPlaying = false;
+    let currentSrtIndex = -1;
+    let currentImageIndex = 0;
+    let startTime = 0;
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
-                    colors: {
-                        brand: {
-                            light: '#F4F1ED',
-                            sand: '#D5CABD',
-                            taupe: '#8C7D70',
-                            dark: '#232323',
-                        }
-                    }
+    // Palavras Chave para estilização dark
+    const outlineKeywords = ['glory hole', 'divine', 'body', 'throat'];
+    const solidKeywords = ['scream', 'dark', 'hungry', 'lick', 'choke', 'bite', 'alive', 'yeah', 'hope'];
+    
+    // Novas animações focadas nas "viradinhas"
+    const kineticAnimations = ['kin-flip-in', 'kin-tilt-slide', 'kin-zoom-slam'];
+
+    // Símbolos pra flutuar
+    const bgSymbolsList = ['⌖', '✦', '[SYS]', '///', '✖'];
+
+    function timeToMs(timeString) {
+        const parts = timeString.split(',');
+        const timeParts = parts[0].split(':');
+        return parseInt(timeParts[0]) * 3600000 + parseInt(timeParts[1]) * 60000 + parseInt(timeParts[2]) * 1000 + parseInt(parts[1]);
+    }
+
+    function parseSRT(data) {
+        const blocks = data.split(/\n\s*\n/);
+        const parsed = [];
+        blocks.forEach(block => {
+            const lines = block.split('\n');
+            if (lines.length >= 3) {
+                const times = lines[1].split(' --> ');
+                if (times.length === 2) {
+                    parsed.push({
+                        // CORREÇÃO DE TIMING: 
+                        // Inicia um pouquinho antes na lógica interna para compensar o frame da animação
+                        start: Math.max(0, timeToMs(times[0]) - 50),
+                        // Mantém na tela um pouco mais se não for muito rápido
+                        end: timeToMs(times[1]) + 200, 
+                        text: lines.slice(2).join('<br>')
+                    });
                 }
             }
+        });
+        return parsed;
+    }
+
+    function formatText(text) {
+        let formatted = text;
+        outlineKeywords.forEach(kw => { const regex = new RegExp(`\\b${kw}\\b`, 'gi'); formatted = formatted.replace(regex, `<span class="highlight-outline">$&</span>`); });
+        solidKeywords.forEach(kw => { const regex = new RegExp(`\\b${kw}\\b`, 'gi'); formatted = formatted.replace(regex, `<span class="highlight-solid">$&</span>`); });
+        return formatted;
+    }
+
+    function spawnFloatingSymbol() {
+        if(!isPlaying) return;
+        const container = document.getElementById('dynamic-elements');
+        const el = document.createElement('div');
+        el.className = 'bg-symbol';
+        el.innerText = bgSymbolsList[Math.floor(Math.random() * bgSymbolsList.length)];
+        el.style.left = `${Math.random() * 90}%`;
+        el.style.top = `${Math.random() * 90}%`;
+        el.style.animation = `float-symbol ${Math.random() * 2 + 3}s linear forwards`;
+        container.appendChild(el);
+        setTimeout(() => { if(container.contains(el)) container.removeChild(el); }, 5000);
+    }
+
+    document.getElementById('imageUpload').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            images = Array.from(e.target.files).map(file => URL.createObjectURL(file));
+            document.getElementById('img-count').innerText = `${images.length} FOTOS CARREGADAS`;
+            initImageLayers();
         }
-    </script>
-</head>
-<body class="bg-[#050505] text-white m-0 p-0 overflow-hidden w-screen h-screen font-sans selection:bg-brand-taupe selection:text-white">
+    });
 
-    <div id="root" class="w-full h-full"></div>
+    document.getElementById('audioUpload').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            audioSrc = URL.createObjectURL(file);
+            document.getElementById('audio-player').src = audioSrc;
+            document.getElementById('audio-status').innerText = `MÚSICA: ${file.name}`;
+            document.getElementById('audio-status').style.color = 'var(--blood-red)';
+        }
+    });
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    function initImageLayers() {
+        const container = document.getElementById('image-container');
+        container.innerHTML = '';
+        images.forEach((src, idx) => {
+            const imgDiv = document.createElement('div');
+            imgDiv.className = 'bg-image';
+            if (idx === 0) imgDiv.classList.add('active');
+            imgDiv.style.backgroundImage = `url(${src})`;
+            imgDiv.id = `img-${idx}`;
+            container.appendChild(imgDiv);
+        });
+    }
 
-        // --- ÍCONES DA INTERFACE ---
-        const IconBase = ({ children, size = 24, className = "", fill = "none", ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
-        );
-        const Play = (props) => <IconBase {...props}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
-        const Pause = (props) => <IconBase {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></IconBase>;
-        const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
-        const RefreshCw = (props) => <IconBase {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></IconBase>;
-        const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+    // DISPARO ESCURO (Bate estaca com Color Burn)
+    function triggerDarkStrobe() {
+        const strobe = document.getElementById('strobe-layer');
+        strobe.classList.remove('active'); void strobe.offsetWidth; strobe.classList.add('active');
+        changeImage();
+        
+        // Spawn múltiplos elementos na batida
+        spawnFloatingSymbol();
+        spawnFloatingSymbol();
+    }
 
-        // --- SÍMBOLOS DE FUNDO (WATERMARKS) ---
-        const SymbolHome = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
-        const SymbolBlocks = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>;
-        const SymbolMove = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></svg>;
-        const SymbolDiamond = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13"/><path d="M13 3l3 6-4 13"/></svg>;
-        const SymbolSparkles = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>;
+    function changeImage() {
+        if(images.length <= 1) return;
+        const oldImg = document.getElementById(`img-${currentImageIndex}`);
+        if(oldImg) oldImg.classList.remove('active');
+        
+        let nextIndex; do { nextIndex = Math.floor(Math.random() * images.length); } while (nextIndex === currentImageIndex);
+        currentImageIndex = nextIndex;
+        
+        const newImg = document.getElementById(`img-${currentImageIndex}`);
+        if(newImg) newImg.classList.add('active');
+    }
 
-        // Tempos do Vídeo (61.5 Segundos + 5 Segundos de Outro = 66.5s)
-        const VIDEO_DURATION = 61.5; 
-        const TOTAL_DURATION = 66.5; 
+    function startVideo() {
+        document.getElementById('controls-overlay').style.opacity = 0;
+        setTimeout(() => document.getElementById('controls-overlay').style.display = 'none', 400);
 
-        // DADOS DAS LEGENDAS OTIMIZADOS
-        const subtitleData = [
-            { id: 1, start: 0.232, end: 1.027, text: "Olá pessoal!" },
-            { id: 2, start: 1.027, end: 2.138, text: "Hoje pela primeira vez" },
-            { id: 3, start: 2.138, end: 4.160, text: "eu venho falar da Modularte Móveis," },
-            { id: 4, start: 4.160, end: 4.658, text: "uma empresa" },
-            { id: 5, start: 4.658, end: 5.171, text: "que trabalha" },
-            { id: 6, start: 5.171, end: 7.028, text: "com produção de móveis" },
-            { id: 7, start: 7.028, end: 7.840, text: "para o lar" },
-            { id: 8, start: 7.840, end: 8.404, text: "então contamos" },
-            { id: 9, start: 8.404, end: 9.498, text: "com guarda roupas," },
-            { id: 10, start: 9.498, end: 11.620, text: "área de cozinha, salas," },
-            { id: 11, start: 11.620, end: 12.316, text: "trabalhamos com" },
-            { id: 12, start: 12.316, end: 13.393, text: "móveis direcionados" },
-            { id: 13, start: 13.393, end: 14.587, text: "para área comercial." },
-            { id: 14, start: 14.587, end: 16.178, text: "Toda linha de móveis" },
-            { id: 15, start: 16.178, end: 18.217, text: "feita 100%" },
-            { id: 16, start: 18.217, end: 20.571, text: "em MDF de alta qualidade." },
-            { id: 17, start: 20.571, end: 21.549, text: "Os nossos produtos" },
-            { id: 18, start: 21.549, end: 22.792, text: "são com toda a matéria" },
-            { id: 19, start: 22.792, end: 24.533, text: "prima de planejados," },
-            { id: 20, start: 24.533, end: 26.389, text: "porém em formato modular" },
-            { id: 21, start: 26.389, end: 28.147, text: "que traz praticidade," },
-            { id: 22, start: 28.147, end: 29.522, text: "traz facilidade" },
-            { id: 23, start: 29.522, end: 31.362, text: "e te traz possibilidades" },
-            { id: 24, start: 31.362, end: 31.661, text: "de estar" },
-            { id: 25, start: 31.661, end: 32.987, text: "movendo esse móvel" },
-            { id: 26, start: 32.987, end: 33.584, text: "de um lugar" },
-            { id: 27, start: 33.584, end: 35.391, text: "para outro, transporte." },
-            { id: 28, start: 35.391, end: 36.203, text: "E nós temos uma" },
-            { id: 29, start: 36.203, end: 37.280, text: "linha de produtos" },
-            { id: 30, start: 37.280, end: 38.441, text: "com alta qualidade," },
-            { id: 31, start: 38.441, end: 39.651, text: "feitos com carinho" },
-            { id: 32, start: 39.651, end: 41.358, text: "especialmente para você." },
-            { id: 33, start: 41.358, end: 43.845, text: "A Modularte tem o cuidado" },
-            { id: 34, start: 43.845, end: 44.922, text: "de produzir móveis" },
-            { id: 35, start: 44.922, end: 45.585, text: "que tenha" },
-            { id: 36, start: 45.585, end: 47.922, text: "resistência ao transito," },
-            { id: 37, start: 47.922, end: 50.392, text: "que possa facilitar para você" },
-            { id: 38, start: 50.392, end: 52.663, text: "mais conforto e mais qualidade" },
-            { id: 39, start: 52.663, end: 54.470, text: "e mais agilidade" },
-            { id: 40, start: 54.470, end: 56.459, text: "para estar decorando sua casa" },
-            { id: 41, start: 56.459, end: 56.841, text: "para estar" },
-            { id: 42, start: 56.841, end: 57.553, text: "usufruindo" },
-            { id: 43, start: 57.553, end: 59.029, text: "dos nossos produtos." },
-            { id: 44, start: 59.029, end: 60.322, text: "Então eu te convido" },
-            { id: 45, start: 60.322, end: 61.548, text: "vem pra Modularte." }
-        ];
+        subtitles = parseSRT(srtData);
+        initImageLayers();
+        isPlaying = true;
+        
+        if (audioSrc) {
+            const player = document.getElementById('audio-player');
+            player.play();
+            requestAnimationFrame(updateLoopAudio);
+        } else {
+            startTime = Date.now();
+            requestAnimationFrame(updateLoopSimulated);
+        }
+        
+        // Elementos flutuantes contínuos
+        setInterval(spawnFloatingSymbol, 800);
+        // Troca de fundo caso falte batida
+        setInterval(changeImage, 4000);
+    }
 
-        // Palavras-chave para destaque dourado e brilhante
-        const keywords = ['Modularte', 'Móveis', '100%', 'MDF', 'alta', 'qualidade', 'modular', 'praticidade', 'facilidade', 'conforto', 'agilidade', 'carinho', 'inteligentes', 'design'];
+    function processTime(currentTimeMs) {
+        const sub = subtitles.find(s => currentTimeMs >= s.start && currentTimeMs <= s.end);
+        const textElement = document.getElementById('current-lyric');
+        const containerElement = document.getElementById('lyrics-container');
 
-        function App() {
-            const [isPlaying, setIsPlaying] = useState(false);
-            const [isRecordingMode, setIsRecordingMode] = useState(false);
-            const [activeSubtitle, setActiveSubtitle] = useState(null);
-            const [activeSymbol, setActiveSymbol] = useState(null);
-            const [localVideoUrl, setLocalVideoUrl] = useState('');
-            const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
-            const [countdown, setCountdown] = useState(null);
-            
-            // Estado do Outro (Ecrã Final)
-            const [isOutroMode, setIsOutroMode] = useState(false);
-            const isOutroModeRef = useRef(false);
-            
-            const videoRef = useRef(null);
-            const fileInputRef = useRef(null);
-            const timeRef = useRef(0);
-            const activeSubRef = useRef(null);
-            const previewProgressBarRef = useRef(null);
-            const hudTimeRef = useRef(null);
+        if (sub) {
+            let index = subtitles.indexOf(sub);
+            if (index !== currentSrtIndex) {
+                currentSrtIndex = index;
 
-            // LÓGICA DE SÍMBOLOS DINÂMICOS
-            const getSymbolForTime = (time) => {
-                if (time > 2 && time < 14) return 'home';      
-                if (time >= 14 && time < 24) return 'blocks';  
-                if (time >= 24 && time < 35) return 'move';    
-                if (time >= 35 && time < 45) return 'diamond'; 
-                if (time >= 45 && time < 60) return 'sparkles';
-                return null;
-            };
-
-            // LÓGICA DE ZOOM DINÂMICO
-            const getZoomLevel = (time) => {
-                if (time >= 2.1 && time <= 7.0) return 1.15;
-                if (time >= 16.1 && time <= 20.5) return 1.25;
-                if (time >= 24.5 && time <= 31.3) return 1.15;
-                if (time >= 41.3 && time <= 52.6) return 1.20;
-                if (time >= 59.0 && time <= 61.5) return 1.15;
-                return 1.0; 
-            };
-
-            const safePlayVideo = () => {
-                if (videoRef.current && videoRef.current.networkState !== 3) {
-                    const playPromise = videoRef.current.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(error => console.warn("Autoplay bloqueado:", error));
-                    }
-                }
-            };
-
-            const togglePlay = () => {
-                if (!isPlaying) {
-                    if (!isOutroMode) safePlayVideo();
-                    setIsPlaying(true);
+                // É UM BEAT DROP FORTE (ponto no SRT)
+                if (sub.text.trim() === '.') {
+                    triggerDarkStrobe();
+                    textElement.classList.remove('is-active-line');
+                    textElement.style.opacity = 0;
                 } else {
-                    if (videoRef.current) videoRef.current.pause();
-                    setIsPlaying(false);
+                    // Texto normal com as novas viradinhas elegantes
+                    const randomAnimClass = kineticAnimations[Math.floor(Math.random() * kineticAnimations.length)];
+                    containerElement.className = randomAnimClass;
+
+                    textElement.innerHTML = formatText(sub.text);
+                    textElement.style.opacity = 1;
+                    
+                    textElement.style.animation = 'none'; void textElement.offsetWidth; textElement.style.animation = null;
+                    textElement.classList.add('is-active-line');
                 }
-            };
-
-            const resetTime = () => {
-                timeRef.current = 0;
-                isOutroModeRef.current = false;
-                setIsOutroMode(false);
-                setActiveSymbol(null);
-                if (videoRef.current && videoRef.current.readyState > 0) {
-                    videoRef.current.currentTime = 0;
-                }
-                if (previewProgressBarRef.current) previewProgressBarRef.current.style.width = '0%';
-                if (hudTimeRef.current) hudTimeRef.current.innerText = '0.00s';
-                setActiveSubtitle(null);
-                activeSubRef.current = null;
-            };
-
-            const handleVideoUpload = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const url = URL.createObjectURL(file);
-                    setLocalVideoUrl(url);
-                    resetTime();
-                }
-            };
-
-            useEffect(() => {
-                let lastTime = performance.now();
-                let frameId;
-
-                const loop = (now) => {
-                    if (isPlaying && countdown === null) {
-                        let time = timeRef.current;
-                        const delta = Math.min((now - lastTime) / 1000, 0.1);
-                        
-                        if (videoRef.current && !videoRef.current.ended && videoRef.current.readyState >= 2 && !videoRef.current.paused && time < VIDEO_DURATION) {
-                            time = videoRef.current.currentTime;
-                        } else {
-                            time += delta;
-                        }
-                        
-                        timeRef.current = time;
-
-                        const currentOutroMode = time >= VIDEO_DURATION;
-                        if (currentOutroMode !== isOutroModeRef.current) {
-                            isOutroModeRef.current = currentOutroMode;
-                            setIsOutroMode(currentOutroMode);
-                            if (currentOutroMode && videoRef.current) {
-                                videoRef.current.pause();
-                            }
-                        }
-
-                        if (previewProgressBarRef.current) previewProgressBarRef.current.style.width = `${(time / TOTAL_DURATION) * 100}%`;
-                        if (hudTimeRef.current) hudTimeRef.current.innerText = `${time.toFixed(2)}s`;
-                        
-                        if (videoRef.current && !currentOutroMode) {
-                            videoRef.current.style.transform = `scale(${getZoomLevel(time)})`;
-                        }
-
-                        if (!currentOutroMode) {
-                            const sub = subtitleData.find(s => time >= s.start && time <= s.end) || null;
-                            if (sub?.id !== activeSubRef.current?.id) {
-                                activeSubRef.current = sub;
-                                setActiveSubtitle(sub);
-                            }
-                            
-                            // Atualiza Símbolo Flutuante
-                            const currentSymbol = getSymbolForTime(time);
-                            setActiveSymbol(prev => prev !== currentSymbol ? currentSymbol : prev);
-                        } else {
-                            if (activeSubRef.current !== null) {
-                                activeSubRef.current = null;
-                                setActiveSubtitle(null);
-                                setActiveSymbol(null);
-                            }
-                        }
-
-                        if (time >= TOTAL_DURATION) {
-                            setIsPlaying(false);
-                            resetTime();
-                        }
-                    }
-                    lastTime = now;
-                    frameId = requestAnimationFrame(loop);
-                };
-
-                frameId = requestAnimationFrame(loop);
-                return () => cancelAnimationFrame(frameId);
-            }, [isPlaying, countdown]);
-
-            const startRecordingMode = () => {
-                setIsDownloadModalOpen(false);
-                setIsRecordingMode(true);
-                resetTime();
-                setCountdown(5);
-                
-                if (videoRef.current) {
-                     videoRef.current.play().then(() => {
-                         videoRef.current.pause();
-                         videoRef.current.currentTime = 0;
-                     }).catch(() => {});
-                }
-            };
-
-            useEffect(() => {
-                if (countdown === null) return;
-                if (countdown > 0) {
-                    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-                    return () => clearTimeout(timer);
-                } else if (countdown === 0) {
-                    setCountdown(null);
-                    setIsPlaying(true);
-                    safePlayVideo();
-                }
-            }, [countdown]);
-
-            const stopRecordingMode = () => {
-                setIsRecordingMode(false);
-                setIsPlaying(false);
-                setCountdown(null);
-                if (videoRef.current) videoRef.current.pause();
-            };
-
-            return (
-                <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
-                    <style>{`
-                        /* COLOR GRADING PREMIUM (Mais quente, brilhante e contrastante) */
-                        .color-graded-video {
-                            filter: contrast(1.25) brightness(1.1) saturate(1.4) sepia(0.15) hue-rotate(-5deg);
-                            transform-origin: 75% 45%; 
-                            will-change: transform;
-                        }
-                        
-                        /* VINHETA RICA (Tons de café escuro no lugar do preto puro) */
-                        .vignette-effect {
-                            background: linear-gradient(90deg, rgba(20,15,10,0.95) 0%, rgba(20,15,10,0.6) 35%, rgba(0,0,0,0) 70%),
-                                        radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(20,15,10,0.5) 100%);
-                            pointer-events: none;
-                        }
-                        
-                        /* ANIMAÇÕES DAS LEGENDAS COM GLOW E SHIMMER */
-                        @keyframes slideUpFadeBlur { 
-                            0% { transform: translateY(30px) scale(0.95); opacity: 0; filter: blur(8px); } 
-                            100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); } 
-                        }
-                        .word-reveal { 
-                            display: inline-block; 
-                            animation: slideUpFadeBlur 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
-                            opacity: 0; 
-                        }
-                        
-                        .text-glow-white { 
-                            text-shadow: 0 4px 20px rgba(0,0,0,0.8), 0 0 25px rgba(255,255,255,0.4); 
-                        }
-                        .text-glow-gold { 
-                            color: #D5CABD; 
-                            text-shadow: 0 4px 20px rgba(0,0,0,0.9), 0 0 30px rgba(213,202,189,0.8); 
-                        }
-
-                        /* MOVIMENTO CONTÍNUO DOS TEXTOS (Flutuação) */
-                        @keyframes continuousFloat {
-                            0%, 100% { transform: translateY(0px); }
-                            50% { transform: translateY(-8px); }
-                        }
-                        .floating-text-container {
-                            animation: continuousFloat 6s ease-in-out infinite;
-                        }
-
-                        /* ANIMAÇÃO WATERMARK CANTO SUPERIOR DIREITO */
-                        @keyframes watermarkFloat {
-                            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.6; }
-                            50% { transform: translateY(-8px) rotate(1deg) scale(1.02); opacity: 0.9; filter: drop-shadow(0 0 10px rgba(213,202,189,0.5)); }
-                        }
-                        .watermark-float {
-                            animation: watermarkFloat 5s ease-in-out infinite;
-                        }
-                        
-                        /* SÍMBOLOS GIGANTES NO FUNDO */
-                        @keyframes slowSpinFloat {
-                            0% { transform: translate(-20px, 20px) rotate(-5deg) scale(0.9); opacity: 0; }
-                            20% { opacity: 0.15; }
-                            80% { opacity: 0.15; }
-                            100% { transform: translate(30px, -30px) rotate(15deg) scale(1.1); opacity: 0; }
-                        }
-                        .animate-symbol-bg {
-                            animation: slowSpinFloat 10s ease-in-out forwards;
-                            filter: drop-shadow(0 0 30px rgba(213,202,189,0.3));
-                        }
-
-                        /* ANIMAÇÕES DO OUTRO (MONTAGEM 3D WIDE) */
-                        .outro-bg-reveal {
-                            animation: fadeBlurIn 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                        }
-                        @keyframes fadeBlurIn {
-                            0% { opacity: 0; backdrop-filter: blur(0px); }
-                            100% { opacity: 1; backdrop-filter: blur(20px); }
-                        }
-                        
-                        /* Magia 3D montando as linhas da logo (Desenhando o traço) */
-                        @keyframes drawLine { 
-                            100% { stroke-dashoffset: 0; filter: drop-shadow(0 0 10px rgba(213,202,189,0.4)); opacity: 1; } 
-                        }
-                        
-                        .outro-layer-back { stroke-dasharray: 200; stroke-dashoffset: 200; opacity: 0; animation: drawLine 2s ease-out forwards; }
-                        .outro-layer-conn { stroke-dasharray: 200; stroke-dashoffset: 200; opacity: 0; animation: drawLine 2s 0.6s ease-out forwards; }
-                        .outro-layer-front { stroke-dasharray: 200; stroke-dashoffset: 200; opacity: 0; animation: drawLine 2s 1.2s ease-out forwards; }
-                        
-                        /* Flash final do texto da marca na logo WIDE */
-                        @keyframes textSvgFadeIn {
-                            0% { opacity: 0; transform: translateY(5px); filter: blur(2px); }
-                            100% { opacity: 1; transform: translateY(0); filter: drop-shadow(0 4px 10px rgba(255,255,255,0.2)); }
-                        }
-                        .text-flash-end {
-                            opacity: 0;
-                            animation: textSvgFadeIn 2s 1.8s ease-out forwards;
-                        }
-                        .text-flash-end-subtitle {
-                            opacity: 0;
-                            animation: textSvgFadeIn 2s 2.2s ease-out forwards;
-                        }
-                    `}</style>
-
-                    {isDownloadModalOpen && (
-                        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
-                            <div className="bg-[#111] border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
-                                <h2 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-tight text-white">
-                                    <Video className="text-brand-taupe" size={28} /> Preparar para Gravação
-                                </h2>
-                                <div className="space-y-4 mt-6">
-                                    <div className="p-5 border border-white/10 bg-white/5 rounded-2xl">
-                                        <h3 className="font-bold text-white mb-2">Grave com Tela Cheia</h3>
-                                        <p className="text-sm text-neutral-400 mb-6 leading-relaxed">
-                                            A aplicação irá esconder menus e iniciar contagem de 5s. Utilize o seu gravador de ecrã favorito no PC. O vídeo renderizará em formato Widescreen 16:9.
-                                        </p>
-                                        <button onClick={startRecordingMode} className="w-full py-3 bg-brand-taupe hover:bg-[#7A6B5E] text-white rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2">
-                                            <Video size={16} /> LIMPAR TELA E INICIAR CONTAGEM
-                                        </button>
-                                    </div>
-                                </div>
-                                <button onClick={() => setIsDownloadModalOpen(false)} className="w-full mt-4 py-3 text-neutral-500 hover:text-white font-bold transition-colors text-sm">
-                                    FECHAR
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {!isRecordingMode && (
-                        <div className="w-80 h-full border-r border-white/10 bg-[#0d0d0d] p-6 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto shadow-2xl">
-                            <div className="space-y-1 pb-4 border-b border-white/5">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-brand-taupe rounded-full flex items-center justify-center font-bold text-sm">M</div>
-                                    <h1 className="text-lg font-bold tracking-tight">MODULARTE</h1>
-                                </div>
-                                <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Cinematic Edit - {TOTAL_DURATION}s</p>
-                            </div>
-
-                            <div className="space-y-3">
-                                <button 
-                                    onClick={togglePlay}
-                                    className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black shadow-lg' : 'bg-brand-taupe text-white hover:bg-[#7A6B5E] shadow-lg shadow-[#8C7D70]/20'}`}
-                                >
-                                    {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-                                    {isPlaying ? 'PAUSAR PREVIEW' : 'REPRODUZIR PREVIEW'}
-                                </button>
-                                <button 
-                                    onClick={resetTime}
-                                    className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
-                                >
-                                    <RefreshCw size={14} /> RESETAR TEMPO
-                                </button>
-                            </div>
-
-                            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                                <input type="file" accept="video/*" className="hidden" ref={fileInputRef} onChange={handleVideoUpload} />
-                                <button 
-                                    onClick={() => fileInputRef.current.click()}
-                                    className={`w-full py-3 px-4 rounded-xl border text-[10px] font-bold flex items-center justify-between transition-all tracking-wider ${localVideoUrl ? 'border-brand-sand/50 bg-brand-sand/10 text-brand-sand' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
-                                >
-                                    {localVideoUrl ? 'VÍDEO CARREGADO ✓' : 'CARREGAR VÍDEO LOCAL'}
-                                    <Upload size={16} />
-                                </button>
-                            </div>
-
-                            <div className="mt-auto space-y-4 pt-4">
-                                <button 
-                                    onClick={() => setIsDownloadModalOpen(true)}
-                                    className="w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-brand-taupe text-white hover:scale-[1.02] shadow-[#8C7D70]/20"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Video size={18} />
-                                        PREPARAR PARA GRAVAR
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-[#050505]">
-                        
-                        {countdown !== null && countdown > 0 && (
-                            <div className="absolute inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505]">
-                                <h2 className="text-4xl font-light text-white mb-6 text-center leading-tight">
-                                    Inicie a sua gravação<br/>
-                                    <span className="text-brand-sand font-medium">A reprodução arranca em:</span>
-                                </h2>
-                                <div className="text-9xl font-black text-brand-light drop-shadow-[0_0_40px_rgba(213,202,189,0.4)] transition-transform duration-500 scale-110">
-                                    {countdown}
-                                </div>
-                            </div>
-                        )}
-                        
-                        {isRecordingMode && countdown === null && (
-                            <button onClick={stopRecordingMode} className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600/30 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition-all opacity-20 hover:opacity-100">
-                                <Pause size={14} fill="currentColor" /> SAIR DA TELA LIMPA
-                            </button>
-                        )}
-
-                        {!isRecordingMode && (
-                            <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/80 px-4 py-2 rounded-2xl border border-white/10 hidden sm:flex">
-                                <div className="flex flex-col items-end">
-                                <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Timecode</span>
-                                <span ref={hudTimeRef} className="text-xl font-mono text-white tracking-widest leading-none mt-1">0.00s</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- CANVAS WIDESCREEN (16:9) --- */}
-                        <div 
-                            className="relative overflow-hidden transition-all duration-500 flex items-center justify-center"
-                            style={{ 
-                                aspectRatio: '16/9', 
-                                width: isRecordingMode ? '100vw' : '100%',
-                                maxWidth: isRecordingMode ? 'none' : '1200px',
-                                maxHeight: isRecordingMode ? '100vh' : '85vh',
-                                backgroundColor: '#1a1a1a',
-                                borderRadius: isRecordingMode ? '0px' : '16px',
-                                border: isRecordingMode ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                                boxShadow: isRecordingMode ? 'none' : '0 30px 60px -20px rgba(0, 0, 0, 0.9)'
-                            }}
-                        >
-                            
-                            {/* CAMADA DE VÍDEO */}
-                            <div className={`absolute inset-0 w-full h-full bg-[#111] z-0 transition-opacity duration-1000 ${isOutroMode ? 'opacity-0' : 'opacity-100'}`}>
-                                <video
-                                    ref={videoRef}
-                                    src={localVideoUrl}
-                                    crossOrigin="anonymous"
-                                    className="absolute inset-0 w-full h-full object-cover color-graded-video"
-                                    playsInline
-                                    preload="auto"
-                                />
-                                <div className="absolute inset-0 vignette-effect"></div>
-                                
-                                {/* Símbolos Flutuantes (Atrás do Texto) */}
-                                <div className="absolute inset-0 pointer-events-none flex items-center justify-start pl-[5%] overflow-hidden z-[1]">
-                                    {activeSymbol === 'home' && <SymbolHome key="home" className="w-[500px] h-[500px] text-brand-sand animate-symbol-bg" />}
-                                    {activeSymbol === 'blocks' && <SymbolBlocks key="blocks" className="w-[450px] h-[450px] text-brand-taupe animate-symbol-bg" />}
-                                    {activeSymbol === 'move' && <SymbolMove key="move" className="w-[450px] h-[450px] text-brand-sand animate-symbol-bg" />}
-                                    {activeSymbol === 'diamond' && <SymbolDiamond key="diamond" className="w-[500px] h-[500px] text-brand-taupe animate-symbol-bg" />}
-                                    {activeSymbol === 'sparkles' && <SymbolSparkles key="sparkles" className="w-[450px] h-[450px] text-brand-sand animate-symbol-bg" />}
-                                </div>
-                                
-                                {/* MARCA D'ÁGUA NO CANTO DIREITO (Flutuante) */}
-                                <div className="absolute top-6 right-8 w-40 md:w-56 z-20 pointer-events-none watermark-float">
-                                    <svg viewBox="0 0 480 120" preserveAspectRatio="xMidYMid meet" fill="none" className="w-full h-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                                        <g transform="translate(10, 5) scale(0.9)">
-                                            <path d="M 40 85 V 35 L 65 60 L 90 35 V 85" stroke="#8C7D70" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-                                            <path d="M 25 100 L 40 85 M 25 50 L 40 35 M 50 75 L 65 60 M 75 50 L 90 35 M 75 100 L 90 85" stroke="#D5CABD" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-                                            <path d="M 25 100 V 50 L 50 75 L 75 50 V 100" stroke="#F4F1ED" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
-                                        </g>
-                                        <text x="120" y="70" fontFamily="Outfit" fontSize="48" fontWeight="300" fill="#F4F1ED" letterSpacing="4">MODULARTE</text>
-                                        <text x="125" y="95" fontFamily="Outfit" fontSize="14" fontWeight="400" fill="#D5CABD" letterSpacing="8">MÓVEIS</text>
-                                    </svg>
-                                </div>
-                            </div>
-
-                            {/* CAMADA OUTRO (MODULARTE - WIDE CORRIGIDA) */}
-                            <div className={`absolute inset-0 bg-[#151210] z-[5] flex items-center justify-center overflow-hidden ${isOutroMode ? 'outro-bg-reveal' : 'opacity-0 pointer-events-none'}`}>
-                                
-                                {/* Lindo Fundo do Outro */}
-                                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(213,202,189,0.15)_0%,transparent_70%)]"></div>
-                                
-                                {/* Logo Wide (Desenhando o Traço Lado a Lado com o Texto) */}
-                                <div className="flex items-center justify-center relative z-10 w-full px-10">
-                                    <div className="w-full max-w-[300px] md:max-w-[450px] lg:max-w-[500px] h-auto relative">
-                                        <svg viewBox="0 0 520 120" fill="none" preserveAspectRatio="xMidYMid meet" className="w-full h-auto overflow-visible">
-                                            {isOutroMode && (
-                                                <g transform="translate(30, 5)">
-                                                    {/* Ícone 3D Desenhado */}
-                                                    <path d="M 40 85 V 35 L 65 60 L 90 35 V 85" stroke="#8C7D70" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" className="outro-layer-back"/>
-                                                    <path d="M 25 100 L 40 85 M 25 50 L 40 35 M 50 75 L 65 60 M 75 50 L 90 35 M 75 100 L 90 85" stroke="#D5CABD" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" className="outro-layer-conn"/>
-                                                    <path d="M 25 100 V 50 L 50 75 L 75 50 V 100" stroke="#F4F1ED" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" className="outro-layer-front"/>
-                                                    
-                                                    {/* Texto que faz o Flash e aparece ao lado */}
-                                                    <text x="130" y="75" fontFamily="Outfit" fontSize="56" fontWeight="300" fill="#F4F1ED" letterSpacing="4" className="text-flash-end">MODULARTE</text>
-                                                    <text x="135" y="100" fontFamily="Outfit" fontSize="16" fontWeight="400" fill="#8C7D70" letterSpacing="8" className="text-flash-end-subtitle">MÓVEIS</text>
-                                                </g>
-                                            )}
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* CAMADA DAS LEGENDAS COM FLUATUAÇÃO */}
-                            <div className={`absolute inset-y-0 left-0 w-2/3 md:w-[55%] p-10 md:p-16 z-20 pointer-events-none flex flex-col justify-center transition-opacity duration-500 ${isOutroMode ? 'opacity-0' : 'opacity-100'}`}>
-                                <div className="floating-text-container">
-                                    {activeSubtitle && (
-                                        <div className="relative">
-                                            <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-                                                {activeSubtitle.text.split(' ').map((word, idx) => {
-                                                    const cleanWord = word.replace(/[\.,!\?]/g, '').toLowerCase();
-                                                    const isKeyword = keywords.map(k => k.toLowerCase()).includes(cleanWord);
-                                                    
-                                                    const textColorClass = isKeyword ? 'text-glow-gold font-bold' : 'text-[#F4F4F4] text-glow-white font-medium';
-                                                    
-                                                    return (
-                                                        <span key={`${activeSubtitle.id}-${idx}`} className="word-reveal" style={{ animationDelay: `${idx * 0.05}s` }}>
-                                                            <span className={`text-[30px] sm:text-[38px] md:text-[46px] lg:text-[54px] leading-[1.1] tracking-tight ${textColorClass}`}>
-                                                                {word}
-                                                            </span>
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Barra de Progresso do Editor */}
-                            <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
-                                <div ref={previewProgressBarRef} className="h-full bg-brand-taupe shadow-[0_0_15px_rgba(213,202,189,0.9)]" style={{ width: '0%' }}></div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            );
+            }
+        } else {
+            textElement.style.opacity = 0;
+            textElement.classList.remove('is-active-line');
+            currentSrtIndex = -1;
         }
+    }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+    function updateLoopAudio() { if (!isPlaying) return; processTime(document.getElementById('audio-player').currentTime * 1000); requestAnimationFrame(updateLoopAudio); }
+    function updateLoopSimulated() { if (!isPlaying) return; processTime(Date.now() - startTime); requestAnimationFrame(updateLoopSimulated); }
+
+</script>
 </body>
 </html>
