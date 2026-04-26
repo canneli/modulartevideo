@@ -158,26 +158,30 @@
             "Quero voltar. No mesmo sonho. E quem encontra você."
         ];
 
-        // GERADOR DINÂMICO DE TEMPO DE LEGENDA (Ajustado para 70 BPM e Início aos 14s)
+        // GERADOR DINÂMICO DE TEMPO DE LEGENDA (Ajustado para 70 BPM e Início aos 14.19s)
         const BPM = 70;
         const BEAT_DURATION = 60 / BPM; // ~0.857 segundos por batida
         
-        const totalChars = lyricsText.reduce((acc, line) => acc + line.length, 0);
-        let accumulatedTime = 14.0; // A letra começa exatamente aos 14 segundos
+        // Remove a primeira linha da contagem de caracteres pois o tempo dela é manual
+        const charsWithoutFirst = lyricsText.slice(1).reduce((acc, line) => acc + line.length, 0);
+        let accumulatedTime = 19.00 + BEAT_DURATION; // Início do bloco 2
         
         const initialSubtitleData = lyricsText.map((text, index) => {
-            // Intervalo de 1 batida (beat) exata entre as frases para casar com o ritmo
             const gap = BEAT_DURATION; 
+            let start, end;
             
-            // Tempo total disponível (Duração - 14s de intro - 5s de final - pausas)
-            const availableTime = VIDEO_DURATION - 14.0 - 5.0 - (lyricsText.length * gap);
-            
-            // Duração proporcional ao tamanho da frase
-            const duration = (text.length / totalChars) * availableTime; 
-            const start = accumulatedTime;
-            const end = start + duration;
-            
-            accumulatedTime = end + gap; // Adiciona o gap rítmico para a próxima frase
+            if (index === 0) {
+                // Primeira frase customizada como solicitado
+                start = 14.19;
+                end = 19.00;
+            } else {
+                // Cálculo proporcional para o resto do texto
+                start = accumulatedTime;
+                const availableTime = VIDEO_DURATION - 19.00 - 5.0 - ((lyricsText.length - 1) * gap);
+                const duration = (text.length / charsWithoutFirst) * availableTime; 
+                end = start + duration;
+                accumulatedTime = end + gap; // Adiciona o gap rítmico para a próxima frase
+            }
             
             return { 
                 id: index + 1, 
@@ -226,9 +230,10 @@
                 setSubtitles(prev => prev.map(sub => sub.id === id ? { ...sub, [field]: numValue } : sub));
             };
 
-            // LÓGICA DE ZOOM DINÂMICO CONTÍNUO
+            // LÓGICA DE ZOOM DINÂMICO CONTÍNUO (Agora muito mais subtil)
             const getZoomLevel = (time) => {
-                return 1.15 + Math.sin(time * 0.15) * 0.10;
+                // Oscila muito suavemente entre 1.00x e 1.06x
+                return 1.03 + Math.sin(time * 0.1) * 0.03;
             };
 
             // DISTRIBUIÇÃO DINÂMICA DAS LEGENDAS NO ECRÃ
