@@ -1,1367 +1,658 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Glory Hole – Y2K ULTRA</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<style>
-:root {
-  --red: #ff0a33;
-  --pink: #ff5fa0;
-  --cyan: #00f5ff;
-  --yellow: #ffe600;
-  --lime: #a0ff00;
-  --purple: #bf00ff;
-  --white: #ffffff;
-  --dark: #03000a;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body,html{width:100%;height:100%;background:var(--dark);overflow:hidden;font-family:'Space Grotesk',sans-serif;}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Cinematográfico - 7 Minutos e 10 Segundos</title>
+    
+    <!-- Importar Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Importar Bibliotecas React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Importar Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-/* Y2K scanlines overlay */
-body::after{
-  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
-  pointer-events:none;z-index:20;
-}
-
-/* Controls */
-#controls-overlay{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(3,0,10,0.97);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:1000;
-  transition:opacity 0.6s;
-}
-.control-box{
-  padding:50px 60px;text-align:center;
-  border:1px solid var(--cyan);
-  box-shadow:0 0 40px rgba(0,245,255,0.3),0 0 80px rgba(255,10,51,0.2),inset 0 0 60px rgba(0,0,0,0.8);
-  border-radius:4px;position:relative;
-}
-.control-box::before{
-  content:'';position:absolute;top:-1px;left:20%;right:20%;height:2px;
-  background:linear-gradient(90deg,transparent,var(--cyan),var(--pink),var(--cyan),transparent);
-}
-.control-box h1{
-  font-family:'Syne',sans-serif;font-size:3rem;text-transform:uppercase;margin:0 0 4px;
-  color:var(--white);letter-spacing:6px;
-  text-shadow:0 0 10px var(--cyan),0 0 20px var(--cyan),0 0 40px var(--red),0 0 80px var(--red);
-}
-.subtitle-tag{
-  font-size:11px;letter-spacing:4px;color:var(--cyan);margin-bottom:35px;
-  text-shadow:0 0 10px var(--cyan);
-}
-.btn-play{
-  margin-top:30px;background:transparent;color:var(--cyan);
-  border:1px solid var(--cyan);padding:15px 60px;
-  font-family:'Syne';font-weight:800;font-size:1.1rem;cursor:pointer;
-  text-transform:uppercase;letter-spacing:6px;
-  box-shadow:0 0 20px rgba(0,245,255,0.4),inset 0 0 20px rgba(0,245,255,0.1);
-  transition:all 0.3s;
-}
-.btn-play:hover{
-  background:var(--cyan);color:#000;
-  box-shadow:0 0 40px var(--cyan),0 0 80px var(--cyan);transform:scale(1.04);
-}
-.file-input-wrapper{display:flex;flex-direction:column;align-items:center;margin:12px 0;}
-.custom-file-upload{
-  display:inline-block;padding:8px 16px;cursor:pointer;font-size:11px;
-  letter-spacing:2px;color:#aaa;border:1px solid rgba(255,255,255,0.1);
-  text-transform:uppercase;transition:0.3s;border-radius:2px;
-}
-.custom-file-upload:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 10px rgba(0,245,255,0.3);}
-input[type="file"]{display:none;}
-.obs-toggle-wrapper{margin-top:25px;display:flex;align-items:center;gap:10px;color:#aaa;font-size:11px;letter-spacing:2px;cursor:pointer;transition:0.3s;}
-.obs-toggle-wrapper:hover{color:var(--cyan);}
-
-/* Stage */
-#stage{position:relative;width:100%;height:100%;background:#000;}
-#image-container{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;}
-.bg-image{
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  background-size:cover;background-position:center;opacity:0;
-  filter:grayscale(0.5) contrast(1.4) brightness(0.25) hue-rotate(20deg);
-  transition:opacity 0.6s ease-in-out;transform:scale(1.05);
-}
-.bg-image.active{opacity:1;animation:chic-breathe 15s linear infinite alternate;}
-@keyframes chic-breathe{0%{transform:scale(1.05) translate(0,0)}100%{transform:scale(1.15) translate(-1%,1%)}}
-
-.ambient-layer{
-  position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;
-  background:radial-gradient(ellipse at center,transparent 10%,rgba(3,0,10,0.85) 90%);
-  pointer-events:none;
-}
-
-/* Y2K chromatic vignette */
-.chroma-vignette{
-  position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 50%,transparent 40%,rgba(0,245,255,0.04) 100%),
-    radial-gradient(ellipse at 0% 50%,rgba(191,0,255,0.05) 0%,transparent 50%),
-    radial-gradient(ellipse at 100% 50%,rgba(255,10,51,0.05) 0%,transparent 50%);
-}
-
-#canvas-3d{position:absolute;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:0.95;mix-blend-mode:screen;}
-
-#lyrics-container{
-  position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;
-  display:flex;padding:5%;box-sizing:border-box;align-items:center;justify-content:center;
-  perspective:1200px;
-}
-
-#fg-lights{position:absolute;top:0;left:0;width:100%;height:100%;z-index:7;pointer-events:none;overflow:hidden;}
-
-/* Y2K grid lines */
-#grid-layer{
-  position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none;
-  background-image:
-    linear-gradient(rgba(0,245,255,0.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,245,255,0.04) 1px,transparent 1px);
-  background-size:60px 60px;
-  animation:grid-scroll 20s linear infinite;
-}
-@keyframes grid-scroll{0%{background-position:0 0}100%{background-position:60px 60px}}
-
-/* OBS Frame */
-#cinematic-frame{position:absolute;top:0;left:0;width:100%;height:100%;z-index:9;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;opacity:0;transition:opacity 0.5s;}
-#cinematic-frame.active{opacity:1;}
-.cinema-bar{width:100%;height:10%;background:#000;position:relative;}
-.cam-cross{position:absolute;width:20px;height:20px;}
-.cam-cross::before,.cam-cross::after{content:'';position:absolute;background:rgba(0,245,255,0.6);}
-.cam-cross::before{top:50%;left:0;width:100%;height:1px;}
-.cam-cross::after{left:50%;top:0;height:100%;width:1px;}
-.cross-tl{top:15%;left:5%}.cross-tr{top:15%;right:5%}
-.cross-bl{bottom:15%;left:5%}.cross-br{bottom:15%;right:5%}
-.rec-dot{position:absolute;top:15%;right:50%;transform:translateX(50%);color:var(--red);font-family:monospace;font-size:13px;letter-spacing:4px;animation:rec-blink 1s infinite;text-shadow:0 0 8px var(--red);}
-@keyframes rec-blink{0%,100%{opacity:1}50%{opacity:0}}
-
-/* Strobe */
-#strobe-layer{position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;opacity:0;pointer-events:none;}
-#strobe-layer.active{animation:chic-strobe 0.18s ease-out;}
-@keyframes chic-strobe{0%{background:var(--cyan);opacity:0.35}50%{background:var(--red);opacity:0.2}100%{opacity:0}}
-
-/* RGB glitch overlay */
-#glitch-layer{position:absolute;top:0;left:0;width:100%;height:100%;z-index:11;pointer-events:none;opacity:0;}
-#glitch-layer.active{animation:rgb-glitch 0.15s steps(1) forwards;}
-@keyframes rgb-glitch{
-  0%{opacity:1;box-shadow:inset 4px 0 rgba(0,245,255,0.3),inset -4px 0 rgba(255,10,51,0.3)}
-  50%{opacity:0.5;box-shadow:inset -6px 0 rgba(0,245,255,0.2),inset 6px 0 rgba(255,10,51,0.2)}
-  100%{opacity:0}
-}
-
-/* TYPOGRAPHY */
-.lyric-line{
-  font-family:'Syne',sans-serif;font-size:8vw;font-weight:800;
-  text-transform:uppercase;line-height:0.95;width:100%;text-align:center;will-change:transform;
-}
-.k-word{display:inline-block;white-space:nowrap;margin-right:2vw;}
-.k-letter{
-  display:inline-block;opacity:0;
-  color:#fff;
-  text-shadow:0 0 8px #fff,0 0 20px var(--red),0 0 40px var(--red),0 0 80px rgba(255,10,51,0.5);
-}
-
-@keyframes hard-pop{
-  0%{transform:scale(1.8) translateY(40px) rotate(-3deg);opacity:0;filter:blur(4px);}
-  5%{opacity:1;filter:blur(0);}
-  100%{transform:scale(1) translateY(0) rotate(0);opacity:1;}
-}
-@keyframes subtle-float{
-  0%{transform:translateY(0) scale(1);}
-  100%{transform:translateY(-5px) scale(1.02);}
-}
-
-/* HIGHLIGHTS — todos com contraste máximo */
-.highlight-solid{
-  color:#000 !important;
-  background:var(--red) !important;
-  text-shadow:none !important;
-  box-shadow:0 0 20px var(--red),0 0 40px var(--red),0 0 80px rgba(255,10,51,0.5);
-  border-radius:4px;padding:0 6px;
-  -webkit-text-stroke:0 !important;font-weight:900;
-}
-.highlight-outline{
-  color:transparent !important;
-  -webkit-text-stroke:2px var(--cyan);
-  filter:drop-shadow(0 0 8px var(--cyan)) drop-shadow(0 0 20px var(--cyan));
-  text-shadow:none !important;
-}
-.highlight-cyan{
-  color:#000 !important;
-  background:var(--cyan) !important;
-  text-shadow:none !important;
-  box-shadow:0 0 20px var(--cyan),0 0 40px var(--cyan),0 0 80px rgba(0,245,255,0.5);
-  border-radius:4px;padding:0 6px;
-  -webkit-text-stroke:0 !important;font-weight:900;
-}
-.highlight-yellow{
-  color:#000 !important;
-  background:var(--yellow) !important;
-  text-shadow:none !important;
-  box-shadow:0 0 20px var(--yellow),0 0 50px rgba(255,230,0,0.5);
-  border-radius:4px;padding:0 6px;
-  -webkit-text-stroke:0 !important;font-weight:900;
-}
-.highlight-lime{
-  color:#000 !important;
-  background:var(--lime) !important;
-  text-shadow:none !important;
-  box-shadow:0 0 20px var(--lime),0 0 50px rgba(160,255,0,0.5);
-  border-radius:4px;padding:0 6px;
-  -webkit-text-stroke:0 !important;font-weight:900;
-}
-.highlight-purple{
-  color:#fff !important;
-  background:var(--purple) !important;
-  text-shadow:none !important;
-  box-shadow:0 0 20px var(--purple),0 0 50px rgba(191,0,255,0.5);
-  border-radius:4px;padding:0 6px;
-  -webkit-text-stroke:0 !important;font-weight:900;
-}
-
-/* foreground orbs */
-.fg-orb{position:absolute;border-radius:50%;pointer-events:none;mix-blend-mode:screen;}
-@keyframes fg-pass{0%{transform:translate(0,0) scale(1);opacity:0}30%{opacity:1}100%{transform:translate(200px,-200px) scale(3);opacity:0}}
-
-/* Y2K corner decorations */
-.corner-deco{
-  position:absolute;width:60px;height:60px;z-index:8;pointer-events:none;
-  border-color:var(--cyan);border-style:solid;border-width:0;
-}
-.corner-deco.tl{top:20px;left:20px;border-top-width:1px;border-left-width:1px;box-shadow:-5px -5px 15px rgba(0,245,255,0.3);}
-.corner-deco.tr{top:20px;right:20px;border-top-width:1px;border-right-width:1px;box-shadow:5px -5px 15px rgba(0,245,255,0.3);}
-.corner-deco.bl{bottom:20px;left:20px;border-bottom-width:1px;border-left-width:1px;box-shadow:-5px 5px 15px rgba(0,245,255,0.3);}
-.corner-deco.br{bottom:20px;right:20px;border-bottom-width:1px;border-right-width:1px;box-shadow:5px 5px 15px rgba(0,245,255,0.3);}
-
-/* BPM pulse ring */
-#pulse-ring{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:200px;height:200px;border-radius:50%;z-index:5;pointer-events:none;opacity:0;
-  border:1px solid var(--cyan);
-}
-#pulse-ring.pulse{animation:ring-expand 0.5s ease-out forwards;}
-@keyframes ring-expand{0%{width:80px;height:80px;opacity:0.8;border-color:var(--cyan);}100%{width:600px;height:600px;opacity:0;border-color:var(--red);}}
-</style>
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            light: '#F4F1ED',
+                            sand: '#D5CABD',
+                            taupe: '#8C7D70',
+                            dark: '#232323',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-
-<div id="controls-overlay">
-  <div class="control-box">
-    <h1>Glory Hole</h1>
-    <div class="subtitle-tag">Y2K · ULTRA GLOW · KINETIC</div>
-    <div class="file-input-wrapper">
-      <label for="imageUpload" class="custom-file-upload">① ADD FOTOS (BACKGROUNDS)</label>
-      <input id="imageUpload" type="file" accept="image/*" multiple/>
-      <span id="img-count" style="font-size:10px;color:var(--cyan);margin-top:5px;text-shadow:0 0 8px var(--cyan)">TEXTURAS PADRÃO ATIVAS</span>
-    </div>
-    <div class="file-input-wrapper">
-      <label for="audioUpload" class="custom-file-upload">② ADD ÁUDIO (.MP3)</label>
-      <input id="audioUpload" type="file" accept="audio/*"/>
-      <span id="audio-status" style="font-size:10px;color:#666;margin-top:5px">SIMULAÇÃO 115BPM</span>
-    </div>
-    <label class="obs-toggle-wrapper">
-      <input type="checkbox" id="obsCheckbox" style="display:block;width:16px;height:16px;accent-color:var(--cyan)">
-      ATIVAR MOLDURA DE GRAVAÇÃO
-    </label>
-    <button class="btn-play" onclick="startVideo()">▶ PLAY</button>
-  </div>
-</div>
-
-<div id="stage">
-  <div id="image-container"></div>
-  <div class="ambient-layer"></div>
-  <div class="chroma-vignette"></div>
-  <div id="grid-layer"></div>
-  <div id="canvas-3d"></div>
-  <div id="pulse-ring"></div>
-  <div id="lyrics-container">
-    <div class="lyric-line" id="current-lyric"></div>
-  </div>
-  <div id="fg-lights"></div>
-  <div class="corner-deco tl"></div>
-  <div class="corner-deco tr"></div>
-  <div class="corner-deco bl"></div>
-  <div class="corner-deco br"></div>
-  <div id="cinematic-frame">
-    <div class="cinema-bar">
-      <div class="cam-cross cross-tl"></div>
-      <div class="cam-cross cross-tr"></div>
-      <div class="rec-dot">● REC</div>
-    </div>
-    <div class="cinema-bar">
-      <div class="cam-cross cross-bl"></div>
-      <div class="cam-cross cross-br"></div>
-    </div>
-  </div>
-  <div id="strobe-layer"></div>
-  <div id="glitch-layer"></div>
-</div>
-
-<audio id="audio-player"></audio>
-
-<script>
-const srtData = `1
-00:00:02,320 --> 00:00:03,520
-Now i can see you
-
-2
-00:00:03,520 --> 00:00:04,720
-through the glory hole
-
-3
-00:00:05,000 --> 00:00:06,000
-glory hole
-
-4
-00:00:06,200 --> 00:00:06,560
-go!
-
-5
-00:00:06,760 --> 00:00:07,120
-.
-
-6
-00:00:07,320 --> 00:00:07,480
-.
-
-7
-00:00:07,600 --> 00:00:07,760
-.
-
-8
-00:00:07,960 --> 00:00:08,120
-.
-
-9
-00:00:08,440 --> 00:00:08,600
-.
-
-10
-00:00:08,840 --> 00:00:09,000
-.
-
-11
-00:00:09,320 --> 00:00:09,480
-.
-
-12
-00:00:09,760 --> 00:00:09,920
-.
-
-13
-00:00:10,120 --> 00:00:10,280
-.
-
-14
-00:00:10,520 --> 00:00:10,680
-.
-
-15
-00:00:10,960 --> 00:00:11,120
-.
-
-16
-00:00:11,360 --> 00:00:11,520
-.
-
-17
-00:00:11,840 --> 00:00:12,000
-.
-
-18
-00:00:12,280 --> 00:00:12,440
-.
-
-19
-00:00:12,600 --> 00:00:12,760
-.
-
-20
-00:00:12,960 --> 00:00:13,120
-.
-
-21
-00:00:13,360 --> 00:00:13,520
-.
-
-22
-00:00:13,640 --> 00:00:13,800
-.
-
-23
-00:00:13,920 --> 00:00:14,080
-.
-
-24
-00:00:14,240 --> 00:00:14,400
-.
-
-25
-00:00:14,520 --> 00:00:14,680
-.
-
-26
-00:00:14,840 --> 00:00:16,040
-Hey!
-
-27
-00:00:16,800 --> 00:00:18,680
-I've been searching for you
-
-28
-00:00:18,680 --> 00:00:20,360
-all the night
-
-29
-00:00:21,320 --> 00:00:22,720
-I've been dreaming 'bout you
-
-30
-00:00:22,840 --> 00:00:24,240
-all this time
-
-31
-00:00:25,280 --> 00:00:26,480
-I'm so hungry
-
-32
-00:00:26,480 --> 00:00:27,880
-baby tell me why
-
-33
-00:00:29,280 --> 00:00:30,560
-the way you make me
-
-34
-00:00:30,560 --> 00:00:31,120
-scream
-
-35
-00:00:31,120 --> 00:00:32,160
-i feel alive
-
-36
-00:00:32,160 --> 00:00:32,840
-in this club
-
-37
-00:00:32,840 --> 00:00:33,760
-in this club
-
-38
-00:00:33,760 --> 00:00:34,680
-i found you
-
-39
-00:00:34,720 --> 00:00:35,640
-i found you
-
-40
-00:00:35,760 --> 00:00:36,680
-looking at me
-
-41
-00:00:36,880 --> 00:00:38,040
-i was
-
-42
-00:00:38,040 --> 00:00:38,920
-looking at you
-
-43
-00:00:38,920 --> 00:00:39,720
-yeah
-
-44
-00:00:40,200 --> 00:00:41,000
-party don't stop
-
-45
-00:00:41,000 --> 00:00:41,800
-party don't stop
-
-46
-00:00:41,800 --> 00:00:43,280
-people moving around
-
-47
-00:00:43,280 --> 00:00:44,200
-moving around
-
-48
-00:00:44,240 --> 00:00:45,160
-if you want more
-
-49
-00:00:45,280 --> 00:00:46,200
-if you want more
-
-50
-00:00:46,200 --> 00:00:48,000
-i'm standing behind the wall
-
-51
-00:00:48,480 --> 00:00:49,760
-no wasting time
-
-52
-00:00:49,760 --> 00:00:50,720
-just observe
-
-53
-00:00:50,720 --> 00:00:51,240
-that's
-
-54
-00:00:51,240 --> 00:00:52,040
-how i roll
-
-55
-00:00:52,040 --> 00:00:52,960
-your body
-
-56
-00:00:52,960 --> 00:00:53,920
-is so divine
-
-57
-00:00:53,920 --> 00:00:55,160
-you can shove it
-
-58
-00:00:55,160 --> 00:00:56,400
-down my throat
-
-59
-00:00:56,480 --> 00:00:57,280
-i'm high
-
-60
-00:00:57,280 --> 00:00:58,200
-in the dark
-
-61
-00:00:58,200 --> 00:00:59,160
-you gave me
-
-62
-00:00:59,160 --> 00:01:00,400
-so much hope
-
-63
-00:01:01,760 --> 00:01:01,960
-now i can see you
-
-64
-00:01:01,960 --> 00:01:03,160
-through the glory hole
-
-65
-00:01:03,440 --> 00:01:04,440
-glory hole
-
-66
-00:01:04,640 --> 00:01:05,000
-go!
-
-67
-00:01:05,080 --> 00:01:05,440
-go!
-
-68
-00:01:09,160 --> 00:01:10,160
-hole
-
-69
-00:01:10,160 --> 00:01:11,160
-hole
-
-70
-00:01:13,280 --> 00:01:14,120
-Hey!
-
-71
-00:01:14,480 --> 00:01:15,320
-Hey!
-
-72
-00:01:15,320 --> 00:01:17,120
-I've been waiting to see you
-
-73
-00:01:17,120 --> 00:01:18,240
-tonight
-
-74
-00:01:18,240 --> 00:01:19,760
-you toniiii-i-ight
-
-75
-00:01:19,760 --> 00:01:21,160
-i can lick you soo good
-
-76
-00:01:21,280 --> 00:01:22,200
-I won't bite
-
-77
-00:01:22,320 --> 00:01:23,720
-I won't biiiiite
-
-78
-00:01:23,720 --> 00:01:24,920
-there's nothing wrong
-
-79
-00:01:24,920 --> 00:01:26,320
-baby, I can't deny
-
-80
-00:01:26,560 --> 00:01:27,960
-can't denyyyy
-
-81
-00:01:27,960 --> 00:01:29,000
-the way I choke
-
-82
-00:01:29,000 --> 00:01:29,560
-on you
-
-83
-00:01:29,560 --> 00:01:30,600
-it's on my mind
-
-84
-00:01:30,600 --> 00:01:31,280
-in this club
-
-85
-00:01:31,280 --> 00:01:32,200
-in this club
-
-86
-00:01:32,200 --> 00:01:33,120
-i found you
-
-87
-00:01:33,160 --> 00:01:34,080
-i found you
-
-88
-00:01:34,200 --> 00:01:35,120
-looking at me
-
-89
-00:01:35,320 --> 00:01:36,480
-i was
-
-90
-00:01:36,480 --> 00:01:37,360
-looking at you
-
-91
-00:01:37,360 --> 00:01:38,160
-yeah
-
-92
-00:01:38,640 --> 00:01:39,440
-party don't stop
-
-93
-00:01:39,440 --> 00:01:40,240
-party don't stop
-
-94
-00:01:40,240 --> 00:01:41,720
-people moving around
-
-95
-00:01:41,720 --> 00:01:42,640
-moving around
-
-96
-00:01:42,680 --> 00:01:43,600
-if you want more
-
-97
-00:01:43,720 --> 00:01:44,640
-if you want more
-
-98
-00:01:44,640 --> 00:01:46,440
-i'm standing behind the wall
-
-99
-00:01:46,920 --> 00:01:48,200
-no wasting time
-
-100
-00:01:48,200 --> 00:01:49,160
-just observe
-
-101
-00:01:49,160 --> 00:01:49,680
-that's
-
-102
-00:01:49,680 --> 00:01:50,480
-how i roll
-
-103
-00:01:50,480 --> 00:01:51,400
-your body
-
-104
-00:01:51,400 --> 00:01:52,360
-is so divine
-
-105
-00:01:52,360 --> 00:01:53,600
-you can shove it
-
-106
-00:01:53,600 --> 00:01:54,840
-down my throat
-
-107
-00:01:54,920 --> 00:01:55,720
-i'm high
-
-108
-00:01:55,720 --> 00:01:56,640
-in the dark
-
-109
-00:01:56,640 --> 00:01:57,600
-you gave me
-
-110
-00:01:57,600 --> 00:01:58,840
-so much hope
-
-111
-00:01:59,200 --> 00:02:00,400
-now i can see you
-
-112
-00:02:00,400 --> 00:02:01,600
-through the glory hole
-
-113
-00:02:01,880 --> 00:02:02,880
-glory hole
-
-114
-00:02:03,080 --> 00:02:03,440
-glory
-
-115
-00:02:03,520 --> 00:02:03,840
-hole
-
-116
-00:02:03,840 --> 00:02:05,120
-no wasting time
-
-117
-00:02:05,120 --> 00:02:06,080
-just observe
-
-118
-00:02:06,080 --> 00:02:06,600
-that's
-
-119
-00:02:06,600 --> 00:02:07,400
-how i roll
-
-120
-00:02:07,400 --> 00:02:08,080
-hang tight
-
-121
-00:02:08,080 --> 00:02:09,280
-that's so divine
-
-122
-00:02:09,280 --> 00:02:10,520
-you can shove it
-
-123
-00:02:10,520 --> 00:02:11,760
-down my throat
-
-124
-00:02:11,840 --> 00:02:12,640
-i'm high
-
-125
-00:02:12,640 --> 00:02:13,560
-in the dark
-
-126
-00:02:13,560 --> 00:02:14,520
-you gave me
-
-127
-00:02:14,520 --> 00:02:15,760
-so much hope
-
-128
-00:02:16,120 --> 00:02:17,320
-now i can see you
-
-129
-00:02:17,320 --> 00:02:18,520
-through the glory hole
-
-130
-00:02:18,800 --> 00:02:19,800
-glory hole
-
-131
-00:02:20,000 --> 00:02:20,360
-glory
-
-132
-00:02:20,960 --> 00:02:21,320
-oh
-
-133
-00:02:21,400 --> 00:02:21,760
-oh
-
-134
-00:02:21,880 --> 00:02:22,240
-oh
-
-135
-00:02:22,320 --> 00:02:22,680
-oh
-
-136
-00:02:22,840 --> 00:02:23,200
-oh
-
-137
-00:02:23,440 --> 00:02:23,800
-oh
-
-138
-00:02:24,080 --> 00:02:24,440
-oh
-
-139
-00:02:24,600 --> 00:02:24,960
-hole
-
-140
-00:02:25,080 --> 00:02:25,440
-oh
-
-141
-00:02:25,520 --> 00:02:25,880
-oh
-
-142
-00:02:26,000 --> 00:02:26,360
-oh
-
-143
-00:02:26,440 --> 00:02:26,800
-oh
-
-144
-00:02:26,960 --> 00:02:27,320
-oh
-
-145
-00:02:27,560 --> 00:02:27,920
-oh
-
-146
-00:02:28,200 --> 00:02:28,560
-oh
-
-147
-00:02:28,720 --> 00:02:29,080
-hole
-
-148
-00:02:29,440 --> 00:02:29,800
-oh
-
-149
-00:02:29,880 --> 00:02:30,240
-oh
-
-150
-00:02:30,360 --> 00:02:30,720
-oh
-
-151
-00:02:30,800 --> 00:02:31,160
-oh
-
-152
-00:02:31,320 --> 00:02:31,680
-oh
-
-153
-00:02:31,920 --> 00:02:32,280
-oh
-
-154
-00:02:32,560 --> 00:02:32,920
-oh
-
-155
-00:02:33,080 --> 00:02:33,440
-hole
-
-156
-00:02:33,560 --> 00:02:33,920
-oh
-
-157
-00:02:34,000 --> 00:02:34,360
-oh
-
-158
-00:02:34,480 --> 00:02:34,840
-oh
-
-159
-00:02:34,920 --> 00:02:35,280
-oh
-
-160
-00:02:35,440 --> 00:02:35,800
-oh
-
-161
-00:02:36,040 --> 00:02:36,400
-oh
-
-162
-00:02:36,680 --> 00:02:37,040
-oh
-
-163
-00:02:37,200 --> 00:02:37,560
-hole
-
-164
-00:02:38,240 --> 00:02:38,600
-oh
-
-165
-00:02:38,720 --> 00:02:39,080
-oh
-
-166
-00:02:39,160 --> 00:02:39,520
-oh
-
-167
-00:02:39,680 --> 00:02:40,040
-hm
-
-168
-00:02:40,280 --> 00:02:40,640
-hm
-
-169
-00:02:40,920 --> 00:02:41,280
-hm
-
-170
-00:02:41,440 --> 00:02:41,800
-hole
-
-171
-00:02:42,040 --> 00:02:42,400
-oh
-
-172
-00:02:42,520 --> 00:02:42,880
-oh
-
-173
-00:02:42,960 --> 00:02:43,320
-oh
-
-174
-00:02:43,480 --> 00:02:43,840
-hm
-
-175
-00:02:44,080 --> 00:02:44,440
-hm
-
-176
-00:02:44,720 --> 00:02:45,080
-hm
-
-177
-00:02:45,240 --> 00:02:45,600
-hole
-
-178
-00:02:46,120 --> 00:02:46,480
-oh
-
-179
-00:02:46,600 --> 00:02:46,960
-oh
-
-180
-00:02:47,040 --> 00:02:47,400
-oh
-
-181
-00:02:47,560 --> 00:02:47,920
-hm
-
-182
-00:02:48,160 --> 00:02:48,520
-hm
-
-183
-00:02:48,800 --> 00:02:49,160
-hm
-
-184
-00:02:49,360 --> 00:02:50,560
-i can see you
-
-185
-00:02:50,560 --> 00:02:51,760
-through the glory hole
-
-186
-00:02:52,040 --> 00:02:53,040
-glory hole
-
-187
-00:02:53,240 --> 00:02:53,560
-glory
-
-188
-00:02:53,560 --> 00:02:53,920
-hole`;
-
-let subtitles=[],images=[
-  "https://images.unsplash.com/photo-1549887552-cb1071d3e5ca?w=1600&q=80",
-  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1600&q=80",
-  "https://images.unsplash.com/photo-1571172828691-537446545183?w=1600&q=80",
-  "https://images.unsplash.com/photo-1558317751-bc3ed6f85f72?w=1600&q=80"
-];
-let audioSrc=null,isPlaying=false,currentSrtIndex=-1,currentImageIndex=0,startTime=0;
-const hyperTriggers=['glory hole','Hey!','scream','choke','hole'];
-let hyperMode=false,hyperInterval=null;
-let scene,camera,renderer,main3DObject,particles,targetScale=1;
-
-function initThreeJS(){
-  const container=document.getElementById('canvas-3d');
-  scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
-  renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
-  renderer.setSize(window.innerWidth,window.innerHeight);
-  container.appendChild(renderer.domElement);
-  main3DObject=new THREE.Group();
-
-  const eyeGeo=new THREE.SphereGeometry(14,32,16);
-  const eyeMat=new THREE.MeshBasicMaterial({color:0x00f5ff,wireframe:true,transparent:true,opacity:0.1});
-  const eyeMesh=new THREE.Mesh(eyeGeo,eyeMat);
-  eyeMesh.scale.set(1,0.35,0.6);
-
-  const irisGeo=new THREE.TorusGeometry(4.5,0.15,16,80);
-  const irisMat=new THREE.MeshBasicMaterial({color:0x00f5ff,transparent:true,opacity:0.5});
-  const irisMesh=new THREE.Mesh(irisGeo,irisMat);
-
-  const ring2Geo=new THREE.TorusGeometry(7,0.08,8,64);
-  const ring2Mat=new THREE.MeshBasicMaterial({color:0xff0a33,transparent:true,opacity:0.4});
-  const ring2Mesh=new THREE.Mesh(ring2Geo,ring2Mat);
-
-  const pupilGeo=new THREE.SphereGeometry(1.5,16,16);
-  const pupilMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.9});
-  const pupilMesh=new THREE.Mesh(pupilGeo,pupilMat);
-
-  const glowGeo=new THREE.TorusGeometry(10,0.05,8,80);
-  const glowMat=new THREE.MeshBasicMaterial({color:0xbf00ff,transparent:true,opacity:0.3});
-  const glowRing=new THREE.Mesh(glowGeo,glowMat);
-
-  main3DObject.add(eyeMesh,irisMesh,ring2Mesh,pupilMesh,glowRing);
-  scene.add(main3DObject);
-
-  const partGeo=new THREE.BufferGeometry();
-  const partCount=1000;
-  const posArray=new Float32Array(partCount*3);
-  const colArray=new Float32Array(partCount*3);
-  const colors=[[1,0.04,0.2],[0,0.96,1],[0.75,0,1],[1,0.9,0],[0.63,1,0]];
-  for(let i=0;i<partCount;i++){
-    posArray[i*3]=(Math.random()-0.5)*120;
-    posArray[i*3+1]=(Math.random()-0.5)*120;
-    posArray[i*3+2]=(Math.random()-0.5)*120;
-    const c=colors[Math.floor(Math.random()*colors.length)];
-    colArray[i*3]=c[0];colArray[i*3+1]=c[1];colArray[i*3+2]=c[2];
-  }
-  partGeo.setAttribute('position',new THREE.BufferAttribute(posArray,3));
-  partGeo.setAttribute('color',new THREE.BufferAttribute(colArray,3));
-  const partMat=new THREE.PointsMaterial({size:0.25,vertexColors:true,transparent:true,opacity:0.7});
-  particles=new THREE.Points(partGeo,partMat);
-  scene.add(particles);
-  camera.position.z=30;
-
-  function animate3D(){
-    requestAnimationFrame(animate3D);
-    const t=Date.now()*0.0005;
-    main3DObject.rotation.y=Math.sin(t*0.5)*0.5;
-    main3DObject.rotation.x=Math.cos(t*0.7)*0.25;
-    main3DObject.children[1].rotation.z+=0.008;
-    main3DObject.children[2].rotation.z-=0.004;
-    main3DObject.children[4].rotation.z+=0.002;
-    const ps=1+Math.sin(t*10)*0.12;
-    main3DObject.children[3].scale.setScalar(ps);
-    particles.rotation.y+=0.0015;
-    particles.rotation.x+=0.0007;
-    camera.position.x=Math.sin(t)*5;
-    camera.position.y=Math.cos(t)*3;
-    camera.lookAt(scene.position);
-    main3DObject.scale.lerp(new THREE.Vector3(targetScale,targetScale,targetScale),0.08);
-    if(targetScale>1)targetScale-=0.03;
-    renderer.render(scene,camera);
-  }
-  animate3D();
-  window.addEventListener('resize',()=>{
-    camera.aspect=window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth,window.innerHeight);
-  });
-}
-
-function timeToMs(t){
-  const p=t.split(','),tp=p[0].split(':');
-  return parseInt(tp[0])*3600000+parseInt(tp[1])*60000+parseInt(tp[2])*1000+parseInt(p[1]);
-}
-function parseSRT(data){
-  const blocks=data.split(/\n\s*\n/),parsed=[];
-  blocks.forEach(b=>{
-    const lines=b.split('\n');
-    if(lines.length>=3){
-      const times=lines[1].split(' --> ');
-      if(times.length===2)parsed.push({start:Math.max(0,timeToMs(times[0])-200),end:timeToMs(times[1])+300,text:lines.slice(2).join('<br>')});
-    }
-  });
-  return parsed;
-}
-
-function formatText(text){
-  let f=text;
-  [
-    ['glory hole','highlight-outline'],
-    ['hey!','highlight-solid'],
-    ['go!','highlight-solid'],
-    ['scream','highlight-yellow'],
-    ['choke','highlight-yellow'],
-    ['bite','highlight-yellow'],
-    ['yeah','highlight-yellow'],
-    ['hungry','highlight-lime'],
-    ['lick','highlight-lime'],
-    ['dark','highlight-purple'],
-    ['throat','highlight-purple'],
-    ['divine','highlight-cyan'],
-    ['alive','highlight-cyan'],
-    ['hope','highlight-cyan'],
-    ['hole','highlight-outline'],
-  ].forEach(([kw,cls])=>{
-    const rx=new RegExp(`\\b${kw}\\b`,'gi');
-    f=f.replace(rx,m=>`<span class="${cls}">${m}</span>`);
-  });
-  return f;
-}
-
-function makeLettersKinetic(html){
-  const temp=document.createElement('div');
-  temp.innerHTML=html;
-  let gi=0;
-  function wrap(node){
-    if(node.nodeType===3){
-      const words=node.nodeValue.split(/(\s+)/);
-      const frag=document.createDocumentFragment();
-      words.forEach(w=>{
-        if(w.trim()===''){const s=document.createElement('span');s.innerHTML='&nbsp;';frag.appendChild(s);}
-        else{
-          const wc=document.createElement('span');wc.className='k-word';
-          for(let i=0;i<w.length;i++){
-            const s=document.createElement('span');s.innerText=w[i];s.className='k-letter';
-            const d=(gi*0.04).toFixed(3);
-            s.style.cssText=`animation-name:hard-pop,subtle-float;animation-duration:0.15s,2.5s;animation-delay:${d}s,${d}s;animation-timing-function:cubic-bezier(0.175,0.885,0.32,1.275),ease-in-out;animation-iteration-count:1,infinite;animation-direction:normal,alternate;animation-fill-mode:forwards,forwards;`;
-            wc.appendChild(s);gi++;
-          }
-          frag.appendChild(wc);
+<body class="bg-[#050505] text-white m-0 p-0 overflow-hidden w-screen h-screen font-sans selection:bg-brand-taupe selection:text-white">
+
+    <div id="root" class="w-full h-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ÍCONES DA INTERFACE ---
+        const IconBase = ({ children, size = 24, className = "", fill = "none", ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+        const Play = (props) => <IconBase {...props}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
+        const Pause = (props) => <IconBase {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></IconBase>;
+        const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
+        const RefreshCw = (props) => <IconBase {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></IconBase>;
+        const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+        const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
+
+        // --- SÍMBOLOS DE FUNDO (WATERMARKS ABSTRATOS TEMÁTICOS) ---
+        const SymbolSun = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+        const SymbolInfinity = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.355-8-5.096 0-5.096 8 0 8 5.095 0 7.133-8 12.355-8z"/></svg>;
+        const SymbolTime = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>;
+        const SymbolDiamond = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13"/><path d="M13 3l3 6-4 13"/></svg>;
+        const SymbolSparkles = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>;
+
+        // TEMPOS DO VÍDEO (7 Minutos e 10 Segundos = 430 Segundos)
+        const VIDEO_DURATION = 430; 
+        const TOTAL_DURATION = 430; 
+
+        // LETRA DA MÚSICA (DIVIDIDA EM BLOCOS PARA LEGENDA)
+        const lyricsText = [
+            "Dizem que você sai da sua quebrada.",
+            "Mas a sua quebrada nunca sai de você.",
+            "Disso eu tenho certeza.",
+            "As lembranças ficaram ecoando na minha mente.",
+            "De um passado tão gostoso e reluzente.",
+            "Deixa eu voltar. Quero voltar.",
+            "Entrar na máquina do tempo é só ilusão. Eu sei.",
+            "Quero voltar. Quero viver.",
+            "O mesmo sonho de encontrar você.",
+            "As lembranças e boa na mente, igual sino na capela.",
+            "Um passado reluzente. Vida simples, rua bela.",
+            "Cada dia uma história. Brota forte na memória.",
+            "Coisa boa, coisa louca, cena vivada, trajetória.",
+            "Tipo o dia que negão de mandinha, chegou causando pavor.",
+            "Domingão de quebrada, alguém gritou.",
+            "No calor, bicho veio montado, cavalo batendo no chão.",
+            "Vacão brilhando na mão. Parecia cena de filmão.",
+            "Rapaziada, debandou cada um pra um lado na pressão.",
+            "Peto se escondeu ligeiro debaixo de um caminhão.",
+            "Vio de Miralba voando, pulou muro na agonia.",
+            "Quando viu, já tava longe, lá na rua de Jardim corria, negão.",
+            "Riscando o facão no chão. Silêncio geral.",
+            "Ninguém falou nada. Respeito total.",
+            "Depois montou no cavalo, sem pressa, sem discussão.",
+            "E foi embora, deixando história na recordada.",
+            "Voltar, quero voltar.",
+            "Entrar na máquina do tempo. É só ilusão. Eu sei, quero voltar.",
+            "Quero voltar. O mesmo sonho. E de novo encontrar você.",
+            "Bem umas lembranças, vaga que volta de vez em quando.",
+            "A galera jogando bola na igreja. O campinho lotando.",
+            "E no meio da bagunça. Molecada na correria.",
+            "Correndo atrás de Neydin e o da Cearense. Todo dia.",
+            "Eu nem tava nessa fita, nem tava na confusão.",
+            "Mas levei um cascudo de jolo e sou palito sem explicação.",
+            "O babo rolava solto. Amizade era na moral.",
+            "Mas quando a bola caía na casa de Mariacutia. Era fatal, tal.",
+            "Ela até devolvia, mas na maior implicância.",
+            "Voltava toda furada de faca. Acabava a infância.",
+            "A brincadeira parava, todo mundo reclamando.",
+            "Mas no outro dia tava lá, mesma turma jogando.",
+            "De repente um tumulto corre e corre na quebrada.",
+            "Todo mundo olhando o Mauro de Nainha e Evando, saindo na pancada.",
+            "Era soco, era voadora, ninguém segurava o vendaval.",
+            "Começou na casa de Rosinha e foi parar e é linado lá em cima no final.",
+            "A briga por emoção, parecia até decisão.",
+            "E vê, velho com um galo no braço, gritando na multidão.",
+            "Meus filhos não briguem não.",
+            "Outra treta pesada, também virou tradição.",
+            "Quando o lado de Madalena saiu na mão com o Paulo do break, irmão.",
+            "Os caras pareciam profissional, luta sem vacilação.",
+            "Tipo o Mike Tyson no auge, pancadaria de campeão.",
+            "Deixa eu voltar. Quero voltar.",
+            "Entrar na máquina do tempo. É só ilusão. Eu sei.",
+            "Quero voltar. Quero viver. O mesmo sonho. E de novo encontrar você.",
+            "Me recordo com tristeza dos anos 92, 90 e três.",
+            "Uma fatalidade que o bairro inteiro nunca esqueceu de vez.",
+            "Um carro desgovernado, bateu forte num poste da rua.",
+            "Alta tensão balançando, faz carrasgando a lua.",
+            "Curto o circuito no fio, perigo espalhado no chão.",
+            "Uma criança se assustou e saiu correndo na direção.",
+            "Pisou no fio caído. Tragédia no mesmo instante.",
+            "Silêncio virou desespero. Um choque brutal e marcante.",
+            "Mas um heroína da quebrada mostrou coragem total.",
+            "Nossa querida dona anália, num gesto puro e leal.",
+            "Não pensou duas vezes ao ver o neto e perigo.",
+            "Correu pra salvar a criança, enfrentando o inimigo.",
+            "Mas o destino foi cruel naquele momento final.",
+            "Ela não resistiu ao choque, silêncio na capital.",
+            "Lembro da aflição da rua. Do desespero na multidão.",
+            "Paulo, seu filho, chorando sem chão no coração.",
+            "Rosinha mãe de netinha. Sofrimento sem igual.",
+            "E pode chorando, desesperado naquele cenário fatal.",
+            "O luto foi pesado, pesado demais pra aceitar.",
+            "Eu abracei meu amigo Tiago sem saber o que falar.",
+            "Ele perdeu a avó e o irmão naquele mesmo dia.",
+            "Choramos juntos bastante. Tor que até hoje arrepia.",
+            "Outro momento triste, marcou nossa caminhada.",
+            "Quando o filho de seu Miro perdeu a vida na estrada,",
+            "e cu era querido por toda aquela gente.",
+            "Mas o destino chegou de forma dura e diferente.",
+            "Um escote vindo de outra estrada.",
+            "Tirou sua vida num segundo inesperado.",
+            "A notícia caiu pesada em toda a população.",
+            "Mas uma vez a quebrada, viste um luto no coração.",
+            "E uma frase dele ficou gravada na memória.",
+            "Palavras simples que viraram parte da história.",
+            "Lembra de mim, meu senhor? Quando entrar no seu reino.",
+            "Silêncio na rua. E o choro quebrando sereno.",
+            "Deixa eu voltar. Quero voltar.",
+            "Entrar na máquina do tempo. É só ilusão. Eu sei, quero voltar.",
+            "Quero voltar. No mesmo sonho. E quem encontra você."
+        ];
+
+        // GERADOR DINÂMICO DE TEMPO DE LEGENDA
+        const totalChars = lyricsText.reduce((acc, line) => acc + line.length, 0);
+        let accumulatedTime = 1.0; // Iniciar as legendas no segundo 1
+        
+        const initialSubtitleData = lyricsText.map((text, index) => {
+            // Distribuição do tempo baseado na quantidade de texto com 0.3s de folga/respiro
+            const duration = (text.length / totalChars) * (VIDEO_DURATION - 8 - (lyricsText.length * 0.3)); 
+            const start = accumulatedTime;
+            const end = start + duration;
+            accumulatedTime = end + 0.3; // Avança para a próxima e aplica folga
+            return { id: index + 1, start, end, text };
+        });
+
+        // Palavras-chave para destaque dourado e brilhante
+        const keywords = ['quebrada', 'lembranças', 'passado', 'voltar', 'viver', 'sonho', 'memória', 'história', 'saudade', 'tradição', 'ilusão', 'coração', 'respeito', 'amizade', 'fatalidade', 'coragem', 'heroína', 'destino', 'população', 'reino', 'luto', 'briga', 'tristeza'];
+
+        function App() {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [isRecordingMode, setIsRecordingMode] = useState(false);
+            const [activeSubtitle, setActiveSubtitle] = useState(null);
+            const [activeSymbol, setActiveSymbol] = useState(null);
+            const [localVideoUrl, setLocalVideoUrl] = useState('');
+            const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+            const [isTimingEditorOpen, setIsTimingEditorOpen] = useState(false);
+            const [countdown, setCountdown] = useState(null);
+            const [subtitles, setSubtitles] = useState(initialSubtitleData);
+            
+            const videoRef = useRef(null);
+            const fileInputRef = useRef(null);
+            const timeRef = useRef(0);
+            const activeSubRef = useRef(null);
+            const subtitlesRef = useRef(subtitles);
+            const previewProgressBarRef = useRef(null);
+            const hudTimeRef = useRef(null);
+
+            // Mantém as referências sincronizadas com o estado mais atual
+            useEffect(() => {
+                subtitlesRef.current = subtitles;
+            }, [subtitles]);
+
+            // Atualiza os tempos específicos de uma legenda
+            const updateSubtitleTime = (id, field, value) => {
+                const numValue = parseFloat(value);
+                if (isNaN(numValue)) return;
+                setSubtitles(prev => prev.map(sub => sub.id === id ? { ...sub, [field]: numValue } : sub));
+            };
+
+            // LÓGICA DE SÍMBOLOS DINÂMICOS (Giram durante os 7 min)
+            const getSymbolForTime = (time) => {
+                const symbols = ['sun', 'infinity', 'time', 'diamond', 'sparkles'];
+                const cycleDuration = 30; // cada um fica visível 30 segundos
+                const index = Math.floor((time % (cycleDuration * symbols.length)) / cycleDuration);
+                return symbols[index];
+            };
+
+            // LÓGICA DE ZOOM DINÂMICO CONTÍNUO
+            const getZoomLevel = (time) => {
+                // Oscilação suave e contínua do zoom entre 1.05x e 1.25x
+                return 1.15 + Math.sin(time * 0.15) * 0.10;
+            };
+
+            const safePlayVideo = () => {
+                if (videoRef.current && videoRef.current.networkState !== 3) {
+                    const playPromise = videoRef.current.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => console.warn("Autoplay bloqueado:", error));
+                    }
+                }
+            };
+
+            const togglePlay = () => {
+                if (!isPlaying) {
+                    safePlayVideo();
+                    setIsPlaying(true);
+                } else {
+                    if (videoRef.current) videoRef.current.pause();
+                    setIsPlaying(false);
+                }
+            };
+
+            const resetTime = () => {
+                timeRef.current = 0;
+                setActiveSymbol(null);
+                if (videoRef.current && videoRef.current.readyState > 0) {
+                    videoRef.current.currentTime = 0;
+                }
+                if (previewProgressBarRef.current) previewProgressBarRef.current.style.width = '0%';
+                if (hudTimeRef.current) hudTimeRef.current.innerText = '0.00s';
+                setActiveSubtitle(null);
+                activeSubRef.current = null;
+            };
+
+            const handleVideoUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    setLocalVideoUrl(url);
+                    resetTime();
+                }
+            };
+
+            useEffect(() => {
+                let lastTime = performance.now();
+                let frameId;
+
+                const loop = (now) => {
+                    if (isPlaying && countdown === null) {
+                        let time = timeRef.current;
+                        const delta = Math.min((now - lastTime) / 1000, 0.1);
+                        
+                        if (videoRef.current && !videoRef.current.ended && videoRef.current.readyState >= 2 && !videoRef.current.paused && time < TOTAL_DURATION) {
+                            time = videoRef.current.currentTime;
+                        } else {
+                            time += delta;
+                        }
+                        
+                        timeRef.current = time;
+
+                        if (previewProgressBarRef.current) previewProgressBarRef.current.style.width = `${(time / TOTAL_DURATION) * 100}%`;
+                        if (hudTimeRef.current) {
+                            const minutes = Math.floor(time / 60);
+                            const seconds = (time % 60).toFixed(2);
+                            hudTimeRef.current.innerText = `${minutes}:${seconds.padStart(5, '0')}s`;
+                        }
+                        
+                        if (videoRef.current) {
+                            videoRef.current.style.transform = `scale(${getZoomLevel(time)})`;
+                        }
+
+                        const sub = subtitlesRef.current.find(s => time >= s.start && time <= s.end) || null;
+                        if (sub?.id !== activeSubRef.current?.id) {
+                            activeSubRef.current = sub;
+                            setActiveSubtitle(sub);
+                        }
+                        
+                        // Atualiza Símbolo Flutuante
+                        const currentSymbol = getSymbolForTime(time);
+                        setActiveSymbol(prev => prev !== currentSymbol ? currentSymbol : prev);
+
+                        // Fim do vídeo
+                        if (time >= TOTAL_DURATION) {
+                            setIsPlaying(false);
+                            resetTime();
+                        }
+                    }
+                    lastTime = now;
+                    frameId = requestAnimationFrame(loop);
+                };
+
+                frameId = requestAnimationFrame(loop);
+                return () => cancelAnimationFrame(frameId);
+            }, [isPlaying, countdown]);
+
+            const startRecordingMode = () => {
+                setIsDownloadModalOpen(false);
+                setIsRecordingMode(true);
+                resetTime();
+                setCountdown(5);
+                
+                if (videoRef.current) {
+                     videoRef.current.play().then(() => {
+                         videoRef.current.pause();
+                         videoRef.current.currentTime = 0;
+                     }).catch(() => {});
+                }
+            };
+
+            useEffect(() => {
+                if (countdown === null) return;
+                if (countdown > 0) {
+                    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+                    return () => clearTimeout(timer);
+                } else if (countdown === 0) {
+                    setCountdown(null);
+                    setIsPlaying(true);
+                    safePlayVideo();
+                }
+            }, [countdown]);
+
+            const stopRecordingMode = () => {
+                setIsRecordingMode(false);
+                setIsPlaying(false);
+                setCountdown(null);
+                if (videoRef.current) videoRef.current.pause();
+            };
+
+            return (
+                <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
+                    <style>{`
+                        /* COLOR GRADING PREMIUM (Golden Hour) */
+                        .color-graded-video {
+                            filter: contrast(1.15) brightness(1.05) saturate(1.6) sepia(0.4) hue-rotate(-10deg);
+                            transform-origin: center center; 
+                            will-change: transform;
+                        }
+                        
+                        /* VINHETA RICA (Tons quentes de Golden Hour) */
+                        .vignette-effect {
+                            background: linear-gradient(90deg, rgba(40,15,0,0.95) 0%, rgba(40,15,0,0.5) 35%, rgba(0,0,0,0) 70%),
+                                        radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(40,10,0,0.6) 100%);
+                            pointer-events: none;
+                        }
+
+                        /* BRILHO ALARANJADO DO SOL */
+                        .golden-flare {
+                            background: radial-gradient(circle at 20% 20%, rgba(255,140,40,0.25) 0%, transparent 60%);
+                            mix-blend-mode: screen;
+                            pointer-events: none;
+                        }
+
+                        .custom-scrollbar::-webkit-scrollbar {
+                            width: 6px;
+                        }
+                        .custom-scrollbar::-webkit-scrollbar-thumb {
+                            background: rgba(255, 255, 255, 0.2);
+                            border-radius: 4px;
+                        }
+                        
+                        /* ANIMAÇÕES DAS LEGENDAS COM GLOW E SHIMMER */
+                        @keyframes slideUpFadeBlur { 
+                            0% { transform: translateY(30px) scale(0.95); opacity: 0; filter: blur(8px); } 
+                            100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); } 
+                        }
+                        .word-reveal { 
+                            display: inline-block; 
+                            animation: slideUpFadeBlur 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+                            opacity: 0; 
+                        }
+                        
+                        .text-glow-white { 
+                            text-shadow: 0 4px 20px rgba(0,0,0,0.8), 0 0 25px rgba(255,255,255,0.4); 
+                        }
+                        .text-glow-gold { 
+                            color: #D5CABD; 
+                            text-shadow: 0 4px 20px rgba(0,0,0,0.9), 0 0 30px rgba(213,202,189,0.8); 
+                        }
+
+                        /* MOVIMENTO CONTÍNUO DOS TEXTOS (Flutuação) */
+                        @keyframes continuousFloat {
+                            0%, 100% { transform: translateY(0px); }
+                            50% { transform: translateY(-8px); }
+                        }
+                        .floating-text-container {
+                            animation: continuousFloat 6s ease-in-out infinite;
+                        }
+                        
+                        /* SÍMBOLOS GIGANTES NO FUNDO */
+                        @keyframes slowSpinFloat {
+                            0% { transform: translate(-20px, 20px) rotate(-5deg) scale(0.9); opacity: 0; }
+                            20% { opacity: 0.15; }
+                            80% { opacity: 0.15; }
+                            100% { transform: translate(30px, -30px) rotate(15deg) scale(1.1); opacity: 0; }
+                        }
+                        .animate-symbol-bg {
+                            animation: slowSpinFloat 30s ease-in-out forwards;
+                            filter: drop-shadow(0 0 30px rgba(213,202,189,0.3));
+                        }
+                    `}</style>
+
+                    {isDownloadModalOpen && (
+                        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
+                            <div className="bg-[#111] border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
+                                <h2 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-tight text-white">
+                                    <Video className="text-brand-taupe" size={28} /> Preparar para Gravação
+                                </h2>
+                                <div className="space-y-4 mt-6">
+                                    <div className="p-5 border border-white/10 bg-white/5 rounded-2xl">
+                                        <h3 className="font-bold text-white mb-2">Grave com Tela Cheia</h3>
+                                        <p className="text-sm text-neutral-400 mb-6 leading-relaxed">
+                                            A aplicação irá esconder menus e iniciar contagem de 5s. Utilize o seu gravador de ecrã favorito no PC. O vídeo de 7 minutos renderizará em formato Widescreen 16:9.
+                                        </p>
+                                        <button onClick={startRecordingMode} className="w-full py-3 bg-brand-taupe hover:bg-[#7A6B5E] text-white rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2">
+                                            <Video size={16} /> LIMPAR TELA E INICIAR CONTAGEM
+                                        </button>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsDownloadModalOpen(false)} className="w-full mt-4 py-3 text-neutral-500 hover:text-white font-bold transition-colors text-sm">
+                                    FECHAR
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isRecordingMode && (
+                        <div className="w-80 h-full border-r border-white/10 bg-[#0d0d0d] p-6 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto shadow-2xl">
+                            <div className="space-y-1 pb-4 border-b border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-brand-taupe rounded-full flex items-center justify-center font-bold text-sm">7M</div>
+                                    <h1 className="text-lg font-bold tracking-tight">VÍDEO POESIA</h1>
+                                </div>
+                                <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Cinematic Edit - {Math.floor(TOTAL_DURATION / 60)}:{TOTAL_DURATION % 60}m</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <button 
+                                    onClick={togglePlay}
+                                    className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black shadow-lg' : 'bg-brand-taupe text-white hover:bg-[#7A6B5E] shadow-lg shadow-[#8C7D70]/20'}`}
+                                >
+                                    {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                                    {isPlaying ? 'PAUSAR PREVIEW' : 'REPRODUZIR PREVIEW'}
+                                </button>
+                                <button 
+                                    onClick={resetTime}
+                                    className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    <RefreshCw size={14} /> RESETAR TEMPO
+                                </button>
+                                <button 
+                                    onClick={() => setIsTimingEditorOpen(true)}
+                                    className="w-full py-3 rounded-xl bg-brand-sand/10 hover:bg-brand-sand/20 border border-brand-sand/30 text-brand-sand text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    <Clock size={14} /> EDITAR TIMING
+                                </button>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+                                <input type="file" accept="video/*" className="hidden" ref={fileInputRef} onChange={handleVideoUpload} />
+                                <button 
+                                    onClick={() => fileInputRef.current.click()}
+                                    className={`w-full py-3 px-4 rounded-xl border text-[10px] font-bold flex items-center justify-between transition-all tracking-wider ${localVideoUrl ? 'border-brand-sand/50 bg-brand-sand/10 text-brand-sand' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
+                                >
+                                    {localVideoUrl ? 'VÍDEO CARREGADO ✓' : 'CARREGAR VÍDEO LOCAL'}
+                                    <Upload size={16} />
+                                </button>
+                            </div>
+
+                            <div className="mt-auto space-y-4 pt-4">
+                                <button 
+                                    onClick={() => setIsDownloadModalOpen(true)}
+                                    className="w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-brand-taupe text-white hover:scale-[1.02] shadow-[#8C7D70]/20"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Video size={18} />
+                                        PREPARAR PARA GRAVAR
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-[#050505]">
+                        
+                        {countdown !== null && countdown > 0 && (
+                            <div className="absolute inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505]">
+                                <h2 className="text-4xl font-light text-white mb-6 text-center leading-tight">
+                                    Inicie a sua gravação<br/>
+                                    <span className="text-brand-sand font-medium">O vídeo de 7m arranca em:</span>
+                                </h2>
+                                <div className="text-9xl font-black text-brand-light drop-shadow-[0_0_40px_rgba(213,202,189,0.4)] transition-transform duration-500 scale-110">
+                                    {countdown}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {isRecordingMode && countdown === null && (
+                            <button onClick={stopRecordingMode} className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600/30 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition-all opacity-20 hover:opacity-100">
+                                <Pause size={14} fill="currentColor" /> SAIR DA TELA LIMPA
+                            </button>
+                        )}
+
+                        {!isRecordingMode && (
+                            <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/80 px-4 py-2 rounded-2xl border border-white/10 hidden sm:flex">
+                                <div className="flex flex-col items-end">
+                                <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Timecode (7 Min)</span>
+                                <span ref={hudTimeRef} className="text-xl font-mono text-white tracking-widest leading-none mt-1">0:00.00s</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* --- CANVAS WIDESCREEN (16:9) --- */}
+                        <div 
+                            className="relative overflow-hidden transition-all duration-500 flex items-center justify-center"
+                            style={{ 
+                                aspectRatio: '16/9', 
+                                width: isRecordingMode ? '100vw' : '100%',
+                                maxWidth: isRecordingMode ? 'none' : '1200px',
+                                maxHeight: isRecordingMode ? '100vh' : '85vh',
+                                backgroundColor: '#1a1a1a',
+                                borderRadius: isRecordingMode ? '0px' : '16px',
+                                border: isRecordingMode ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: isRecordingMode ? 'none' : '0 30px 60px -20px rgba(0, 0, 0, 0.9)'
+                            }}
+                        >
+                            
+                            {/* CAMADA DE VÍDEO */}
+                            <div className={`absolute inset-0 w-full h-full bg-[#111] z-0 transition-opacity duration-1000 opacity-100`}>
+                                <video
+                                    ref={videoRef}
+                                    src={localVideoUrl}
+                                    crossOrigin="anonymous"
+                                    className="absolute inset-0 w-full h-full object-cover color-graded-video"
+                                    playsInline
+                                    preload="auto"
+                                    loop
+                                />
+                                <div className="absolute inset-0 vignette-effect"></div>
+                                <div className="absolute inset-0 golden-flare"></div>
+                                
+                                {/* Símbolos Flutuantes (Atrás do Texto) */}
+                                <div className="absolute inset-0 pointer-events-none flex items-center justify-start pl-[5%] overflow-hidden z-[1]">
+                                    {activeSymbol === 'sun' && <SymbolSun key="sun" className="w-[500px] h-[500px] text-brand-sand animate-symbol-bg" />}
+                                    {activeSymbol === 'infinity' && <SymbolInfinity key="infinity" className="w-[450px] h-[450px] text-brand-taupe animate-symbol-bg" />}
+                                    {activeSymbol === 'time' && <SymbolTime key="time" className="w-[450px] h-[450px] text-brand-sand animate-symbol-bg" />}
+                                    {activeSymbol === 'diamond' && <SymbolDiamond key="diamond" className="w-[500px] h-[500px] text-brand-taupe animate-symbol-bg" />}
+                                    {activeSymbol === 'sparkles' && <SymbolSparkles key="sparkles" className="w-[450px] h-[450px] text-brand-sand animate-symbol-bg" />}
+                                </div>
+                            </div>
+
+                            {/* CAMADA DAS LEGENDAS COM FLUATUAÇÃO */}
+                            <div className={`absolute inset-y-0 left-0 w-2/3 md:w-[60%] p-10 md:p-16 z-20 pointer-events-none flex flex-col justify-center transition-opacity duration-500 opacity-100`}>
+                                <div className="floating-text-container">
+                                    {activeSubtitle && (
+                                        <div className="relative">
+                                            <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+                                                {activeSubtitle.text.split(' ').map((word, idx) => {
+                                                    const cleanWord = word.replace(/[\.,!\?]/g, '').toLowerCase();
+                                                    const isKeyword = keywords.map(k => k.toLowerCase()).includes(cleanWord);
+                                                    
+                                                    const textColorClass = isKeyword ? 'text-glow-gold font-bold' : 'text-[#F4F4F4] text-glow-white font-medium';
+                                                    
+                                                    return (
+                                                        <span key={`${activeSubtitle.id}-${idx}`} className="word-reveal" style={{ animationDelay: `${idx * 0.05}s` }}>
+                                                            <span className={`text-[30px] sm:text-[36px] md:text-[42px] lg:text-[48px] leading-[1.2] tracking-tight ${textColorClass}`}>
+                                                                {word}
+                                                            </span>
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Barra de Progresso do Editor */}
+                            <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
+                                <div ref={previewProgressBarRef} className="h-full bg-brand-taupe shadow-[0_0_15px_rgba(213,202,189,0.9)] transition-all duration-300" style={{ width: '0%' }}></div>
+                            </div>
+
+                        </div>
+                        
+                        {/* MODAL DE EDIÇÃO DE TIMING */}
+                        {isTimingEditorOpen && (
+                            <div className="absolute inset-4 z-[150] bg-[#0a0a0a]/95 backdrop-blur-md rounded-2xl border border-white/10 p-6 flex flex-col shadow-2xl flex-1 max-w-4xl mx-auto hidden sm:flex">
+                                <div className="flex justify-between items-center mb-6">
+                                    <div>
+                                        <h2 className="text-xl font-bold text-brand-sand flex items-center gap-2">
+                                            <Clock size={20} /> Ajuste de Sincronia das Legendas
+                                        </h2>
+                                        <p className="text-xs text-neutral-400 mt-1">Ajuste o tempo exato (em segundos) em que cada linha inicia e desaparece.</p>
+                                    </div>
+                                    <button onClick={() => setIsTimingEditorOpen(false)} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-colors">FECHAR EDITOR</button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                    {subtitles.map((sub) => (
+                                        <div key={sub.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-brand-sand/30 transition-colors">
+                                            <span className="w-6 text-neutral-500 font-mono text-xs text-center">{sub.id}</span>
+                                            <div className="flex-1 text-sm text-neutral-200 truncate pr-4 font-medium" title={sub.text}>{sub.text}</div>
+                                            <div className="flex gap-3 items-center shrink-0">
+                                                <div className="flex items-center gap-2">
+                                                    <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Início</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.1"
+                                                        value={Number(sub.start).toString()}
+                                                        onChange={(e) => updateSubtitleTime(sub.id, 'start', e.target.value)}
+                                                        className="w-[72px] bg-black/50 border border-white/10 rounded-md px-2 py-1.5 text-brand-sand text-sm font-mono text-center focus:outline-none focus:border-brand-sand"
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Fim</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.1"
+                                                        value={Number(sub.end).toString()}
+                                                        onChange={(e) => updateSubtitleTime(sub.id, 'end', e.target.value)}
+                                                        className="w-[72px] bg-black/50 border border-white/10 rounded-md px-2 py-1.5 text-brand-sand text-sm font-mono text-center focus:outline-none focus:border-brand-sand"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                    </div>
+                </div>
+            );
         }
-      });
-      node.parentNode.replaceChild(frag,node);
-    } else if(node.nodeType===1){
-      Array.from(node.childNodes).forEach(wrap);
-    }
-  }
-  Array.from(temp.childNodes).forEach(wrap);
-  return temp.innerHTML;
-}
 
-function pulseRing(){
-  const r=document.getElementById('pulse-ring');
-  r.classList.remove('pulse');void r.offsetWidth;r.classList.add('pulse');
-}
-
-function spawnForegroundElement(){
-  if(!isPlaying)return;
-  const container=document.getElementById('fg-lights');
-  const el=document.createElement('div');
-  el.className='fg-orb';
-  const size=Math.random()*400+100;
-  const colors=['rgba(0,245,255,0.4)','rgba(255,10,51,0.4)','rgba(191,0,255,0.4)','rgba(255,230,0,0.3)'];
-  const c=colors[Math.floor(Math.random()*colors.length)];
-  el.style.cssText=`width:${size}px;height:${size}px;left:${Math.random()*100}vw;top:${Math.random()*100}vh;filter:blur(${Math.random()*30+20}px);background:radial-gradient(circle,${c} 0%,transparent 70%);animation:fg-pass ${Math.random()*2+0.8}s cubic-bezier(0.4,0,0.2,1) forwards;`;
-  container.appendChild(el);
-  setTimeout(()=>{if(container.contains(el))container.removeChild(el);},3000);
-}
-
-document.getElementById('imageUpload').addEventListener('change',function(e){
-  if(e.target.files.length>0){
-    images=Array.from(e.target.files).map(f=>URL.createObjectURL(f));
-    document.getElementById('img-count').innerText=`${images.length} FOTOS CARREGADAS`;
-    initImageLayers();
-  }
-});
-document.getElementById('audioUpload').addEventListener('change',function(e){
-  if(e.target.files.length>0){
-    const f=e.target.files[0];
-    audioSrc=URL.createObjectURL(f);
-    document.getElementById('audio-player').src=audioSrc;
-    document.getElementById('audio-status').innerText=`MÚSICA: ${f.name}`;
-    document.getElementById('audio-status').style.color='var(--cyan)';
-  }
-});
-document.getElementById('obsCheckbox').addEventListener('change',function(e){
-  document.getElementById('cinematic-frame').classList.toggle('active',e.target.checked);
-});
-document.addEventListener('keydown',e=>{
-  if(e.key.toLowerCase()==='o'){
-    const cb=document.getElementById('obsCheckbox');
-    cb.checked=!cb.checked;
-    document.getElementById('cinematic-frame').classList.toggle('active',cb.checked);
-  }
-});
-
-function initImageLayers(){
-  const container=document.getElementById('image-container');
-  container.innerHTML='';
-  images.forEach((src,idx)=>{
-    const d=document.createElement('div');
-    d.className='bg-image'+(idx===0?' active':'');
-    d.style.backgroundImage=`url(${src})`;
-    d.id=`img-${idx}`;
-    container.appendChild(d);
-  });
-}
-
-function triggerChicStrobe(){
-  const strobe=document.getElementById('strobe-layer');
-  strobe.classList.remove('active');void strobe.offsetWidth;strobe.classList.add('active');
-  const glitch=document.getElementById('glitch-layer');
-  glitch.classList.remove('active');void glitch.offsetWidth;glitch.classList.add('active');
-  targetScale=1.4;
-  pulseRing();
-  changeImage();
-  spawnForegroundElement();
-}
-
-function changeImage(){
-  if(images.length<=1)return;
-  const old=document.getElementById(`img-${currentImageIndex}`);
-  if(old)old.classList.remove('active');
-  let next;do{next=Math.floor(Math.random()*images.length);}while(next===currentImageIndex);
-  currentImageIndex=next;
-  const newImg=document.getElementById(`img-${currentImageIndex}`);
-  if(newImg)newImg.classList.add('active');
-}
-
-function startVideo(){
-  document.getElementById('controls-overlay').style.opacity=0;
-  setTimeout(()=>document.getElementById('controls-overlay').style.display='none',600);
-  initThreeJS();
-  subtitles=parseSRT(srtData);
-  initImageLayers();
-  isPlaying=true;
-  if(audioSrc){
-    document.getElementById('audio-player').play();
-    requestAnimationFrame(updateLoopAudio);
-  } else {
-    startTime=Date.now();
-    requestAnimationFrame(updateLoopSimulated);
-  }
-  setInterval(()=>{if(!hyperMode)changeImage();},6000);
-}
-
-function processTime(ms){
-  const sub=subtitles.find(s=>ms>=s.start&&ms<=s.end);
-  const el=document.getElementById('current-lyric');
-  if(sub){
-    const idx=subtitles.indexOf(sub);
-    if(idx!==currentSrtIndex){
-      currentSrtIndex=idx;
-      const isHyper=hyperTriggers.some(t=>sub.text.includes(t));
-      if(isHyper&&!hyperMode){
-        hyperMode=true;
-        if(main3DObject){
-          main3DObject.children[0].material.opacity=0.25;
-          main3DObject.children[1].material.opacity=0.9;
-          main3DObject.children[1].material.color.setHex(0xffe600);
-        }
-        hyperInterval=setInterval(triggerChicStrobe,250);
-      } else if(!isHyper&&hyperMode){
-        hyperMode=false;
-        if(main3DObject){
-          main3DObject.children[0].material.opacity=0.1;
-          main3DObject.children[1].material.opacity=0.5;
-          main3DObject.children[1].material.color.setHex(0x00f5ff);
-        }
-        clearInterval(hyperInterval);
-      }
-      if(sub.text.trim()==='.'){
-        triggerChicStrobe();
-        el.style.opacity=0;
-      } else {
-        const formatted=formatText(sub.text);
-        el.innerHTML=makeLettersKinetic(formatted);
-        el.style.opacity=1;
-      }
-    }
-  } else {
-    el.style.opacity=0;
-    currentSrtIndex=-1;
-    if(hyperMode){
-      hyperMode=false;
-      if(main3DObject){
-        main3DObject.children[0].material.opacity=0.1;
-        main3DObject.children[1].material.opacity=0.5;
-        main3DObject.children[1].material.color.setHex(0x00f5ff);
-      }
-      clearInterval(hyperInterval);
-    }
-  }
-}
-
-function updateLoopAudio(){if(!isPlaying)return;processTime(document.getElementById('audio-player').currentTime*1000);requestAnimationFrame(updateLoopAudio);}
-function updateLoopSimulated(){if(!isPlaying)return;processTime(Date.now()-startTime);requestAnimationFrame(updateLoopSimulated);}
-</script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
