@@ -15,20 +15,25 @@
     <!-- Importar Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Fontes -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Novas Fontes Grunge / Poesia -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Special+Elite&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    fontFamily: { 
+                        sans: ['Outfit', 'sans-serif'],
+                        grunge: ['Special Elite', 'monospace'],
+                        display: ['Anton', 'sans-serif']
+                    },
                     colors: {
                         brand: {
                             light: '#F4F1ED',
-                            sand: '#D5CABD',
+                            sand: '#E6C687', // Um tom mais dourado
                             taupe: '#8C7D70',
                             dark: '#232323',
+                            rust: '#C05A2A'
                         }
                     }
                 }
@@ -53,13 +58,6 @@
         const RefreshCw = (props) => <IconBase {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></IconBase>;
         const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
         const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
-
-        // --- SÍMBOLOS DE FUNDO (WATERMARKS ABSTRATOS TEMÁTICOS) ---
-        const SymbolSun = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
-        const SymbolInfinity = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.355-8-5.096 0-5.096 8 0 8 5.095 0 7.133-8 12.355-8z"/></svg>;
-        const SymbolTime = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>;
-        const SymbolDiamond = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13"/><path d="M13 3l3 6-4 13"/></svg>;
-        const SymbolSparkles = (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>;
 
         // TEMPOS DO VÍDEO (7 Minutos e 10 Segundos = 430 Segundos)
         const VIDEO_DURATION = 430; 
@@ -162,25 +160,22 @@
 
         // GERADOR DINÂMICO DE TEMPO DE LEGENDA
         const totalChars = lyricsText.reduce((acc, line) => acc + line.length, 0);
-        let accumulatedTime = 1.0; // Iniciar as legendas no segundo 1
+        let accumulatedTime = 1.0; 
         
         const initialSubtitleData = lyricsText.map((text, index) => {
-            // Distribuição do tempo baseado na quantidade de texto com 0.3s de folga/respiro
             const duration = (text.length / totalChars) * (VIDEO_DURATION - 8 - (lyricsText.length * 0.3)); 
             const start = accumulatedTime;
             const end = start + duration;
-            accumulatedTime = end + 0.3; // Avança para a próxima e aplica folga
+            accumulatedTime = end + 0.3; 
             return { id: index + 1, start, end, text };
         });
 
-        // Palavras-chave para destaque dourado e brilhante
         const keywords = ['quebrada', 'lembranças', 'passado', 'voltar', 'viver', 'sonho', 'memória', 'história', 'saudade', 'tradição', 'ilusão', 'coração', 'respeito', 'amizade', 'fatalidade', 'coragem', 'heroína', 'destino', 'população', 'reino', 'luto', 'briga', 'tristeza'];
 
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [isRecordingMode, setIsRecordingMode] = useState(false);
             const [activeSubtitle, setActiveSubtitle] = useState(null);
-            const [activeSymbol, setActiveSymbol] = useState(null);
             const [localVideoUrl, setLocalVideoUrl] = useState('');
             const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
             const [isTimingEditorOpen, setIsTimingEditorOpen] = useState(false);
@@ -195,30 +190,32 @@
             const previewProgressBarRef = useRef(null);
             const hudTimeRef = useRef(null);
 
-            // Mantém as referências sincronizadas com o estado mais atual
             useEffect(() => {
                 subtitlesRef.current = subtitles;
             }, [subtitles]);
 
-            // Atualiza os tempos específicos de uma legenda
             const updateSubtitleTime = (id, field, value) => {
                 const numValue = parseFloat(value);
                 if (isNaN(numValue)) return;
                 setSubtitles(prev => prev.map(sub => sub.id === id ? { ...sub, [field]: numValue } : sub));
             };
 
-            // LÓGICA DE SÍMBOLOS DINÂMICOS (Giram durante os 7 min)
-            const getSymbolForTime = (time) => {
-                const symbols = ['sun', 'infinity', 'time', 'diamond', 'sparkles'];
-                const cycleDuration = 30; // cada um fica visível 30 segundos
-                const index = Math.floor((time % (cycleDuration * symbols.length)) / cycleDuration);
-                return symbols[index];
-            };
-
             // LÓGICA DE ZOOM DINÂMICO CONTÍNUO
             const getZoomLevel = (time) => {
-                // Oscilação suave e contínua do zoom entre 1.05x e 1.25x
                 return 1.15 + Math.sin(time * 0.15) * 0.10;
+            };
+
+            // DISTRIBUIÇÃO DINÂMICA DAS LEGENDAS NO ECRÃ
+            const getLayoutForSubtitle = (id) => {
+                const layouts = [
+                    { container: 'items-start justify-start', text: 'text-left w-full md:w-[70%]' },         // 1. Canto Sup Esq
+                    { container: 'items-center justify-center', text: 'text-center w-full md:w-[85%]' },    // 2. Centro
+                    { container: 'items-end justify-end', text: 'text-right w-full md:w-[75%]' },           // 3. Canto Inf Dir
+                    { container: 'items-start justify-end', text: 'text-right w-full md:w-[65%]' },         // 4. Canto Sup Dir
+                    { container: 'items-end justify-start', text: 'text-left w-full md:w-[65%]' },          // 5. Canto Inf Esq
+                    { container: 'items-center justify-start', text: 'text-left w-full md:w-[70%] ml-[5%]' }, // 6. Centro Esquerda
+                ];
+                return layouts[(id - 1) % layouts.length];
             };
 
             const safePlayVideo = () => {
@@ -242,7 +239,6 @@
 
             const resetTime = () => {
                 timeRef.current = 0;
-                setActiveSymbol(null);
                 if (videoRef.current && videoRef.current.readyState > 0) {
                     videoRef.current.currentTime = 0;
                 }
@@ -294,12 +290,7 @@
                             activeSubRef.current = sub;
                             setActiveSubtitle(sub);
                         }
-                        
-                        // Atualiza Símbolo Flutuante
-                        const currentSymbol = getSymbolForTime(time);
-                        setActiveSymbol(prev => prev !== currentSymbol ? currentSymbol : prev);
 
-                        // Fim do vídeo
                         if (time >= TOTAL_DURATION) {
                             setIsPlaying(false);
                             resetTime();
@@ -349,74 +340,85 @@
             return (
                 <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
                     <style>{`
-                        /* COLOR GRADING PREMIUM (Golden Hour) */
+                        /* COLOR GRADING GOLDEN HOUR & GRUNGE (Mais luz natural, menos sombra artificial) */
                         .color-graded-video {
-                            filter: contrast(1.15) brightness(1.05) saturate(1.6) sepia(0.4) hue-rotate(-10deg);
+                            filter: contrast(1.15) brightness(1.1) saturate(1.4) sepia(0.3) hue-rotate(-5deg);
                             transform-origin: center center; 
                             will-change: transform;
                         }
                         
-                        /* VINHETA RICA (Tons quentes de Golden Hour) */
+                        /* VINHETA MAIS SUAVE E QUENTE */
                         .vignette-effect {
-                            background: linear-gradient(90deg, rgba(40,15,0,0.95) 0%, rgba(40,15,0,0.5) 35%, rgba(0,0,0,0) 70%),
-                                        radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(40,10,0,0.6) 100%);
+                            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(30,15,5,0.4) 100%);
                             pointer-events: none;
+                            mix-blend-mode: multiply;
                         }
 
-                        /* BRILHO ALARANJADO DO SOL */
-                        .golden-flare {
-                            background: radial-gradient(circle at 20% 20%, rgba(255,140,40,0.25) 0%, transparent 60%);
+                        /* FILM GRAIN (Ruído de Película) */
+                        .film-grain {
+                            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+                            opacity: 0.12;
+                            mix-blend-mode: overlay;
+                            pointer-events: none;
+                            z-index: 10;
+                        }
+
+                        /* ARRANHÕES DE FILME (Film Scratches) */
+                        @keyframes scratchAnim {
+                            0%, 100% { transform: translateX(0); opacity: 0; }
+                            10% { transform: translateX(-5vw); opacity: 0.3; }
+                            11% { opacity: 0; }
+                            50% { transform: translateX(10vw); opacity: 0; }
+                            51% { opacity: 0.4; }
+                            52% { opacity: 0; }
+                            80% { transform: translateX(-15vw); opacity: 0; }
+                            81% { opacity: 0.2; }
+                            82% { opacity: 0; }
+                        }
+                        .film-scratch {
+                            position: absolute;
+                            top: 0;
+                            bottom: 0;
+                            width: 2px;
+                            background: rgba(255,255,255,0.8);
+                            left: 50%;
+                            animation: scratchAnim 4s infinite linear;
+                            mix-blend-mode: overlay;
+                            pointer-events: none;
+                            z-index: 11;
+                        }
+
+                        /* LIGHT LEAKS (Brilhos de Lente Animados) */
+                        @keyframes lightLeakAnim {
+                            0% { transform: translate(-20%, -20%) scale(1); opacity: 0.3; }
+                            50% { transform: translate(10%, 30%) scale(1.5); opacity: 0.6; }
+                            100% { transform: translate(-20%, -20%) scale(1); opacity: 0.3; }
+                        }
+                        .light-leak {
+                            position: absolute;
+                            top: -20%; left: -20%;
+                            width: 150%; height: 150%;
+                            background: radial-gradient(circle at 30% 30%, rgba(255, 120, 30, 0.25) 0%, transparent 50%),
+                                        radial-gradient(circle at 70% 60%, rgba(255, 80, 20, 0.15) 0%, transparent 60%);
                             mix-blend-mode: screen;
                             pointer-events: none;
+                            animation: lightLeakAnim 15s infinite ease-in-out;
+                            z-index: 5;
                         }
 
-                        .custom-scrollbar::-webkit-scrollbar {
-                            width: 6px;
-                        }
-                        .custom-scrollbar::-webkit-scrollbar-thumb {
-                            background: rgba(255, 255, 255, 0.2);
-                            border-radius: 4px;
-                        }
-                        
-                        /* ANIMAÇÕES DAS LEGENDAS COM GLOW E SHIMMER */
-                        @keyframes slideUpFadeBlur { 
-                            0% { transform: translateY(30px) scale(0.95); opacity: 0; filter: blur(8px); } 
-                            100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); } 
+                        /* ANIMAÇÃO DE TEXTO GRUNGE (Impacto tipo Stamp) */
+                        @keyframes stampReveal {
+                            0% { opacity: 0; transform: scale(1.1) translateY(10px); filter: blur(4px); }
+                            100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
                         }
                         .word-reveal { 
                             display: inline-block; 
-                            animation: slideUpFadeBlur 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+                            animation: stampReveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
                             opacity: 0; 
                         }
                         
-                        .text-glow-white { 
-                            text-shadow: 0 4px 20px rgba(0,0,0,0.8), 0 0 25px rgba(255,255,255,0.4); 
-                        }
-                        .text-glow-gold { 
-                            color: #D5CABD; 
-                            text-shadow: 0 4px 20px rgba(0,0,0,0.9), 0 0 30px rgba(213,202,189,0.8); 
-                        }
-
-                        /* MOVIMENTO CONTÍNUO DOS TEXTOS (Flutuação) */
-                        @keyframes continuousFloat {
-                            0%, 100% { transform: translateY(0px); }
-                            50% { transform: translateY(-8px); }
-                        }
-                        .floating-text-container {
-                            animation: continuousFloat 6s ease-in-out infinite;
-                        }
-                        
-                        /* SÍMBOLOS GIGANTES NO FUNDO */
-                        @keyframes slowSpinFloat {
-                            0% { transform: translate(-20px, 20px) rotate(-5deg) scale(0.9); opacity: 0; }
-                            20% { opacity: 0.15; }
-                            80% { opacity: 0.15; }
-                            100% { transform: translate(30px, -30px) rotate(15deg) scale(1.1); opacity: 0; }
-                        }
-                        .animate-symbol-bg {
-                            animation: slowSpinFloat 30s ease-in-out forwards;
-                            filter: drop-shadow(0 0 30px rgba(213,202,189,0.3));
-                        }
+                        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
                     `}</style>
 
                     {isDownloadModalOpen && (
@@ -444,13 +446,13 @@
                     )}
 
                     {!isRecordingMode && (
-                        <div className="w-80 h-full border-r border-white/10 bg-[#0d0d0d] p-6 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto shadow-2xl">
+                        <div className="w-80 h-full border-r border-white/10 bg-[#0d0d0d] p-6 flex flex-col gap-6 z-30 shrink-0 overflow-y-auto shadow-2xl relative z-50">
                             <div className="space-y-1 pb-4 border-b border-white/5">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-brand-taupe rounded-full flex items-center justify-center font-bold text-sm">7M</div>
+                                    <div className="w-8 h-8 bg-brand-sand rounded-full flex items-center justify-center font-bold text-black text-sm">7M</div>
                                     <h1 className="text-lg font-bold tracking-tight">VÍDEO POESIA</h1>
                                 </div>
-                                <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Cinematic Edit - {Math.floor(TOTAL_DURATION / 60)}:{TOTAL_DURATION % 60}m</p>
+                                <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Grunge & Golden Hour Edit</p>
                             </div>
 
                             <div className="space-y-3">
@@ -500,7 +502,7 @@
                         </div>
                     )}
 
-                    <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-[#050505]">
+                    <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-[#050505] overflow-hidden">
                         
                         {countdown !== null && countdown > 0 && (
                             <div className="absolute inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505]">
@@ -508,7 +510,7 @@
                                     Inicie a sua gravação<br/>
                                     <span className="text-brand-sand font-medium">O vídeo de 7m arranca em:</span>
                                 </h2>
-                                <div className="text-9xl font-black text-brand-light drop-shadow-[0_0_40px_rgba(213,202,189,0.4)] transition-transform duration-500 scale-110">
+                                <div className="text-9xl font-black text-brand-sand drop-shadow-[0_0_40px_rgba(230,198,135,0.4)] transition-transform duration-500 scale-110">
                                     {countdown}
                                 </div>
                             </div>
@@ -537,66 +539,75 @@
                                 width: isRecordingMode ? '100vw' : '100%',
                                 maxWidth: isRecordingMode ? 'none' : '1200px',
                                 maxHeight: isRecordingMode ? '100vh' : '85vh',
-                                backgroundColor: '#1a1a1a',
+                                backgroundColor: '#111',
                                 borderRadius: isRecordingMode ? '0px' : '16px',
                                 border: isRecordingMode ? 'none' : '1px solid rgba(255,255,255,0.1)',
                                 boxShadow: isRecordingMode ? 'none' : '0 30px 60px -20px rgba(0, 0, 0, 0.9)'
                             }}
                         >
                             
-                            {/* CAMADA DE VÍDEO */}
-                            <div className={`absolute inset-0 w-full h-full bg-[#111] z-0 transition-opacity duration-1000 opacity-100`}>
+                            {/* CAMADA DE VÍDEO & EFEITOS GRUNGE/GOLDEN */}
+                            <div className={`absolute inset-0 w-full h-full bg-[#111] z-0 transition-opacity duration-1000 opacity-100 overflow-hidden`}>
                                 <video
                                     ref={videoRef}
                                     src={localVideoUrl}
-                                    crossOrigin="anonymous"
                                     className="absolute inset-0 w-full h-full object-cover color-graded-video"
                                     playsInline
                                     preload="auto"
                                     loop
                                 />
-                                <div className="absolute inset-0 vignette-effect"></div>
-                                <div className="absolute inset-0 golden-flare"></div>
                                 
-                                {/* Símbolos Flutuantes (Atrás do Texto) */}
-                                <div className="absolute inset-0 pointer-events-none flex items-center justify-start pl-[5%] overflow-hidden z-[1]">
-                                    {activeSymbol === 'sun' && <SymbolSun key="sun" className="w-[500px] h-[500px] text-brand-sand animate-symbol-bg" />}
-                                    {activeSymbol === 'infinity' && <SymbolInfinity key="infinity" className="w-[450px] h-[450px] text-brand-taupe animate-symbol-bg" />}
-                                    {activeSymbol === 'time' && <SymbolTime key="time" className="w-[450px] h-[450px] text-brand-sand animate-symbol-bg" />}
-                                    {activeSymbol === 'diamond' && <SymbolDiamond key="diamond" className="w-[500px] h-[500px] text-brand-taupe animate-symbol-bg" />}
-                                    {activeSymbol === 'sparkles' && <SymbolSparkles key="sparkles" className="w-[450px] h-[450px] text-brand-sand animate-symbol-bg" />}
-                                </div>
+                                {/* Filtros Vibe */}
+                                <div className="light-leak"></div>
+                                <div className="absolute inset-0 vignette-effect"></div>
+                                <div className="film-grain"></div>
+                                <div className="film-scratch"></div>
                             </div>
 
-                            {/* CAMADA DAS LEGENDAS COM FLUATUAÇÃO */}
-                            <div className={`absolute inset-y-0 left-0 w-2/3 md:w-[60%] p-10 md:p-16 z-20 pointer-events-none flex flex-col justify-center transition-opacity duration-500 opacity-100`}>
-                                <div className="floating-text-container">
-                                    {activeSubtitle && (
-                                        <div className="relative">
-                                            <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-                                                {activeSubtitle.text.split(' ').map((word, idx) => {
-                                                    const cleanWord = word.replace(/[\.,!\?]/g, '').toLowerCase();
-                                                    const isKeyword = keywords.map(k => k.toLowerCase()).includes(cleanWord);
-                                                    
-                                                    const textColorClass = isKeyword ? 'text-glow-gold font-bold' : 'text-[#F4F4F4] text-glow-white font-medium';
-                                                    
-                                                    return (
-                                                        <span key={`${activeSubtitle.id}-${idx}`} className="word-reveal" style={{ animationDelay: `${idx * 0.05}s` }}>
-                                                            <span className={`text-[30px] sm:text-[36px] md:text-[42px] lg:text-[48px] leading-[1.2] tracking-tight ${textColorClass}`}>
-                                                                {word}
-                                                            </span>
+                            {/* CAMADA DAS LEGENDAS (Layout Dinâmico) */}
+                            <div className={`absolute inset-0 p-8 md:p-16 z-20 pointer-events-none flex transition-opacity duration-500 opacity-100 ${activeSubtitle ? getLayoutForSubtitle(activeSubtitle.id).container : ''}`}>
+                                
+                                {activeSubtitle && (
+                                    <div className={`relative ${getLayoutForSubtitle(activeSubtitle.id).text}`}>
+                                        
+                                        <div className="inline-block">
+                                            {activeSubtitle.text.split(' ').map((word, idx) => {
+                                                const cleanWord = word.replace(/[\.,!\?]/g, '').toLowerCase();
+                                                const isKeyword = keywords.map(k => k.toLowerCase()).includes(cleanWord);
+                                                
+                                                // Estilos baseados no tipo de palavra (AGORA BEM MAIS PEQUENO E DELICADO)
+                                                const fontFamilyClass = isKeyword ? 'font-display uppercase' : 'font-grunge';
+                                                const textSizeClass = isKeyword 
+                                                    ? 'text-[24px] sm:text-[32px] md:text-[42px] lg:text-[50px] leading-[0.9] tracking-widest drop-shadow-[2px_3px_0px_rgba(0,0,0,0.8)] mx-1.5' 
+                                                    : 'text-[14px] sm:text-[18px] md:text-[24px] lg:text-[28px] leading-[1.3] drop-shadow-[1px_2px_0px_rgba(0,0,0,0.9)] mx-1';
+                                                const textColorClass = isKeyword ? 'text-brand-sand' : 'text-[#f0f0f0]';
+                                                
+                                                // Pequena rotação aleatória para dar aspecto "Colagem Grunge"
+                                                const randomRotate = isKeyword ? (Math.random() * 4 - 2) : (Math.random() * 2 - 1);
+
+                                                return (
+                                                    <span 
+                                                        key={`${activeSubtitle.id}-${idx}`} 
+                                                        className="word-reveal inline-block" 
+                                                        style={{ 
+                                                            animationDelay: `${idx * 0.08}s`,
+                                                            transform: `rotate(${randomRotate}deg)`
+                                                        }}
+                                                    >
+                                                        <span className={`${fontFamilyClass} ${textSizeClass} ${textColorClass} inline-block`}>
+                                                            {word}
                                                         </span>
-                                                    );
-                                                })}
-                                            </div>
+                                                    </span>
+                                                );
+                                            })}
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Barra de Progresso do Editor */}
                             <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
-                                <div ref={previewProgressBarRef} className="h-full bg-brand-taupe shadow-[0_0_15px_rgba(213,202,189,0.9)] transition-all duration-300" style={{ width: '0%' }}></div>
+                                <div ref={previewProgressBarRef} className="h-full bg-brand-rust shadow-[0_0_15px_rgba(192,90,42,0.9)] transition-all duration-300" style={{ width: '0%' }}></div>
                             </div>
 
                         </div>
