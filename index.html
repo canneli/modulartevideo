@@ -58,6 +58,7 @@
         const RefreshCw = (props) => <IconBase {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></IconBase>;
         const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
         const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
+        const Target = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></IconBase>;
 
         // TEMPOS DO VÍDEO (7 Minutos e 10 Segundos = 430 Segundos)
         const VIDEO_DURATION = 430; 
@@ -162,25 +163,22 @@
         const BPM = 70;
         const BEAT_DURATION = 60 / BPM; // ~0.857 segundos por batida
         
-        // Remove a primeira linha da contagem de caracteres pois o tempo dela é manual
         const charsWithoutFirst = lyricsText.slice(1).reduce((acc, line) => acc + line.length, 0);
-        let accumulatedTime = 19.00 + BEAT_DURATION; // Início do bloco 2
+        let accumulatedTime = 19.00 + BEAT_DURATION; 
         
         const initialSubtitleData = lyricsText.map((text, index) => {
             const gap = BEAT_DURATION; 
             let start, end;
             
             if (index === 0) {
-                // Primeira frase customizada como solicitado
                 start = 14.19;
                 end = 19.00;
             } else {
-                // Cálculo proporcional para o resto do texto
                 start = accumulatedTime;
                 const availableTime = VIDEO_DURATION - 19.00 - 5.0 - ((lyricsText.length - 1) * gap);
                 const duration = (text.length / charsWithoutFirst) * availableTime; 
                 end = start + duration;
-                accumulatedTime = end + gap; // Adiciona o gap rítmico para a próxima frase
+                accumulatedTime = end + gap;
             }
             
             return { 
@@ -196,6 +194,11 @@
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [isRecordingMode, setIsRecordingMode] = useState(false);
+            
+            // ESTADOS PARA O LIVE SYNC
+            const [isLiveSyncMode, setIsLiveSyncMode] = useState(false);
+            const [syncIndex, setSyncIndex] = useState(0);
+            
             const [activeSubtitle, setActiveSubtitle] = useState(null);
             const [localVideoUrl, setLocalVideoUrl] = useState('');
             const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
@@ -204,17 +207,22 @@
             const [subtitles, setSubtitles] = useState(initialSubtitleData);
             
             const videoRef = useRef(null);
-            const zoomWrapperRef = useRef(null); // Ref separada para o Zoom (Evita congelar o vídeo)
+            const zoomWrapperRef = useRef(null); 
             const fileInputRef = useRef(null);
             const timeRef = useRef(0);
             const activeSubRef = useRef(null);
             const subtitlesRef = useRef(subtitles);
             const previewProgressBarRef = useRef(null);
             const hudTimeRef = useRef(null);
+            
+            const syncIndexRef = useRef(0);
+            const isLiveSyncModeRef = useRef(false);
+            const countdownRef = useRef(null);
 
-            useEffect(() => {
-                subtitlesRef.current = subtitles;
-            }, [subtitles]);
+            useEffect(() => { subtitlesRef.current = subtitles; }, [subtitles]);
+            useEffect(() => { syncIndexRef.current = syncIndex; }, [syncIndex]);
+            useEffect(() => { isLiveSyncModeRef.current = isLiveSyncMode; }, [isLiveSyncMode]);
+            useEffect(() => { countdownRef.current = countdown; }, [countdown]);
 
             // Força o vídeo a recarregar quando fazemos o upload de um ficheiro novo
             useEffect(() => {
@@ -230,9 +238,8 @@
                 setSubtitles(prev => prev.map(sub => sub.id === id ? { ...sub, [field]: numValue } : sub));
             };
 
-            // LÓGICA DE ZOOM DINÂMICO CONTÍNUO (Agora muito mais subtil)
+            // LÓGICA DE ZOOM DINÂMICO CONTÍNUO (Subtil)
             const getZoomLevel = (time) => {
-                // Oscila muito suavemente entre 1.00x e 1.06x
                 return 1.03 + Math.sin(time * 0.1) * 0.03;
             };
 
@@ -279,6 +286,68 @@
                 activeSubRef.current = null;
             };
 
+            // --- LÓGICA DO LIVE SYNC (Sincronia ao Vivo) ---
+            const startLiveSync = () => {
+                setIsDownloadModalOpen(false);
+                setIsTimingEditorOpen(false);
+                
+                // Esconder todas as legendas mudando o start para infinito
+                setSubtitles(prev => prev.map(sub => ({ ...sub, start: 9999, end: 9999 })));
+                
+                setIsLiveSyncMode(true);
+                setSyncIndex(0);
+                resetTime();
+                
+                // Contagem decrescente antes de arrancar a sincronia
+                setCountdown(3);
+            };
+
+            const handleSyncTap = () => {
+                // Bloqueia caso não esteja em modo sync, ou se a contagem decrescente estiver ativa
+                if (!isLiveSyncModeRef.current || !videoRef.current || countdownRef.current !== null) return;
+                
+                const currentTime = videoRef.current.currentTime;
+                const currentIdx = syncIndexRef.current;
+
+                setSubtitles(prev => {
+                    const newSubs = [...prev];
+                    
+                    // Terminar a legenda anterior imediatamente
+                    if (currentIdx > 0 && currentIdx <= newSubs.length) {
+                        newSubs[currentIdx - 1] = { ...newSubs[currentIdx - 1], end: currentTime - 0.1 };
+                    }
+                    
+                    // Iniciar a legenda atual que foi clicada
+                    if (currentIdx < newSubs.length) {
+                        newSubs[currentIdx] = { ...newSubs[currentIdx], start: currentTime, end: 9999 };
+                    }
+                    
+                    return newSubs;
+                });
+
+                // Se clicamos na última, finalizamos o processo no clique seguinte
+                if (currentIdx >= subtitlesRef.current.length) {
+                    setIsLiveSyncMode(false);
+                    setIsPlaying(false);
+                    if (videoRef.current) videoRef.current.pause();
+                    setSyncIndex(0);
+                } else {
+                    setSyncIndex(currentIdx + 1);
+                }
+            };
+
+            // Atalho de Teclado (Barra de Espaço) para o Live Sync
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (isLiveSyncModeRef.current && e.code === 'Space') {
+                        e.preventDefault();
+                        handleSyncTap();
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, []);
+
             const handleVideoUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -311,7 +380,6 @@
                             hudTimeRef.current.innerText = `${minutes}:${seconds.padStart(5, '0')}s`;
                         }
                         
-                        // Atualiza o zoom no contentor (e não diretamente no vídeo)
                         if (zoomWrapperRef.current) {
                             zoomWrapperRef.current.style.transform = `scale(${getZoomLevel(time)})`;
                         }
@@ -322,7 +390,7 @@
                             setActiveSubtitle(sub);
                         }
 
-                        if (time >= TOTAL_DURATION) {
+                        if (time >= TOTAL_DURATION && !isLiveSyncMode) {
                             setIsPlaying(false);
                             resetTime();
                         }
@@ -333,7 +401,7 @@
 
                 frameId = requestAnimationFrame(loop);
                 return () => cancelAnimationFrame(frameId);
-            }, [isPlaying, countdown]);
+            }, [isPlaying, countdown, isLiveSyncMode]);
 
             const startRecordingMode = () => {
                 setIsDownloadModalOpen(false);
@@ -365,6 +433,13 @@
                 setIsRecordingMode(false);
                 setIsPlaying(false);
                 setCountdown(null);
+                if (videoRef.current) videoRef.current.pause();
+            };
+
+            const stopLiveSyncMode = (e) => {
+                e.stopPropagation();
+                setIsLiveSyncMode(false);
+                setIsPlaying(false);
                 if (videoRef.current) videoRef.current.pause();
             };
 
@@ -475,7 +550,7 @@
                         </div>
                     )}
 
-                    {!isRecordingMode && (
+                    {!isRecordingMode && !isLiveSyncMode && (
                         <div className="w-80 h-full border-r border-white/10 bg-[#0d0d0d] p-6 flex flex-col gap-6 z-30 shrink-0 overflow-y-auto shadow-2xl relative z-50">
                             <div className="space-y-1 pb-4 border-b border-white/5">
                                 <div className="flex items-center gap-2">
@@ -493,17 +568,27 @@
                                     {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
                                     {isPlaying ? 'PAUSAR PREVIEW' : 'REPRODUZIR PREVIEW'}
                                 </button>
+                                
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    <button 
+                                        onClick={resetTime}
+                                        className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold flex items-center justify-center gap-2 transition-colors uppercase"
+                                    >
+                                        <RefreshCw size={14} /> RESETAR
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsTimingEditorOpen(true)}
+                                        className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold flex items-center justify-center gap-2 transition-colors uppercase"
+                                    >
+                                        <Clock size={14} /> EDITAR
+                                    </button>
+                                </div>
+
                                 <button 
-                                    onClick={resetTime}
-                                    className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                                    onClick={startLiveSync}
+                                    className="w-full py-3 rounded-xl bg-brand-rust/20 hover:bg-brand-rust/30 border border-brand-rust/40 text-brand-sand text-[11px] font-bold flex items-center justify-center gap-2 transition-colors mt-2"
                                 >
-                                    <RefreshCw size={14} /> RESETAR TEMPO
-                                </button>
-                                <button 
-                                    onClick={() => setIsTimingEditorOpen(true)}
-                                    className="w-full py-3 rounded-xl bg-brand-sand/10 hover:bg-brand-sand/20 border border-brand-sand/30 text-brand-sand text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
-                                >
-                                    <Clock size={14} /> EDITAR TIMING
+                                    <Target size={16} /> SINCRONIA AO VIVO (TAP TO SYNC)
                                 </button>
                             </div>
 
@@ -534,25 +619,63 @@
 
                     <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-[#050505] overflow-hidden">
                         
+                        {/* PAINEL DE SINCRONIA AO VIVO */}
+                        {isLiveSyncMode && countdown === null && (
+                            <div className="absolute inset-0 z-[300] flex flex-col items-center justify-end pb-24" onClick={handleSyncTap}>
+                                <div className="bg-black/80 backdrop-blur-md p-8 rounded-3xl border border-brand-sand/50 text-center max-w-3xl cursor-pointer hover:bg-black/90 transition-all pointer-events-auto shadow-[0_0_40px_rgba(230,198,135,0.2)] mx-4 w-full">
+                                    <h3 className="text-brand-sand font-bold mb-4 uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+                                        <Target size={16} /> 
+                                        Sincronia ao Vivo {syncIndex < subtitles.length ? `(${syncIndex + 1}/${subtitles.length})` : '(Concluído)'}
+                                    </h3>
+                                    {syncIndex < subtitles.length ? (
+                                        <>
+                                            <p className="text-3xl sm:text-4xl font-display text-white mb-6 leading-tight uppercase tracking-wider">
+                                                "{subtitles[syncIndex].text}"
+                                            </p>
+                                            <p className="text-brand-sand/80 text-xs sm:text-sm font-bold uppercase tracking-widest animate-pulse">
+                                                Toque na tela ou pressione <kbd className="bg-white/20 px-2 py-1 rounded text-white mx-1 border border-white/20">ESPAÇO</kbd> quando ouvir a frase
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-3xl sm:text-4xl font-display text-white mb-6 leading-tight uppercase tracking-wider text-brand-rust">
+                                                ÚLTIMA FRASE NA TELA
+                                            </p>
+                                            <p className="text-brand-sand/80 text-xs sm:text-sm font-bold uppercase tracking-widest animate-pulse">
+                                                Toque na tela ou pressione <kbd className="bg-white/20 px-2 py-1 rounded text-white mx-1 border border-white/20">ESPAÇO</kbd> para finalizar.
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                                <button 
+                                    onClick={stopLiveSyncMode} 
+                                    className="absolute top-6 left-6 px-4 py-2 bg-red-600/30 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition-all opacity-50 hover:opacity-100 pointer-events-auto border border-red-500/50"
+                                >
+                                    <Pause size={14} fill="currentColor" /> PARAR SINCRONIA
+                                </button>
+                            </div>
+                        )}
+
+                        {/* TELA DE CONTAGEM DECRESCENTE (Usada na Gravação e na Sincronia ao Vivo) */}
                         {countdown !== null && countdown > 0 && (
-                            <div className="absolute inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505]">
-                                <h2 className="text-4xl font-light text-white mb-6 text-center leading-tight">
-                                    Inicie a sua gravação<br/>
+                            <div className="absolute inset-0 z-[400] flex flex-col items-center justify-center bg-[#050505]">
+                                <h2 className="text-3xl sm:text-4xl font-light text-white mb-6 text-center leading-tight">
+                                    {isLiveSyncMode ? 'Prepare o seu ritmo!' : 'Inicie a sua gravação'}<br/>
                                     <span className="text-brand-sand font-medium">O vídeo de 7m arranca em:</span>
                                 </h2>
-                                <div className="text-9xl font-black text-brand-sand drop-shadow-[0_0_40px_rgba(230,198,135,0.4)] transition-transform duration-500 scale-110">
+                                <div className="text-[150px] sm:text-9xl font-black text-brand-sand drop-shadow-[0_0_40px_rgba(230,198,135,0.4)] transition-transform duration-500 scale-110">
                                     {countdown}
                                 </div>
                             </div>
                         )}
                         
                         {isRecordingMode && countdown === null && (
-                            <button onClick={stopRecordingMode} className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600/30 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition-all opacity-20 hover:opacity-100">
+                            <button onClick={stopRecordingMode} className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600/30 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition-all opacity-20 hover:opacity-100 pointer-events-auto border border-red-500/50">
                                 <Pause size={14} fill="currentColor" /> SAIR DA TELA LIMPA
                             </button>
                         )}
 
-                        {!isRecordingMode && (
+                        {!isRecordingMode && !isLiveSyncMode && (
                             <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/80 px-4 py-2 rounded-2xl border border-white/10 hidden sm:flex">
                                 <div className="flex flex-col items-end">
                                 <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Timecode (7 Min)</span>
@@ -566,13 +689,13 @@
                             className="relative overflow-hidden transition-all duration-500 flex items-center justify-center"
                             style={{ 
                                 aspectRatio: '16/9', 
-                                width: isRecordingMode ? '100vw' : '100%',
-                                maxWidth: isRecordingMode ? 'none' : '1200px',
-                                maxHeight: isRecordingMode ? '100vh' : '85vh',
+                                width: (isRecordingMode || isLiveSyncMode) ? '100vw' : '100%',
+                                maxWidth: (isRecordingMode || isLiveSyncMode) ? 'none' : '1200px',
+                                maxHeight: (isRecordingMode || isLiveSyncMode) ? '100vh' : '85vh',
                                 backgroundColor: '#111',
-                                borderRadius: isRecordingMode ? '0px' : '16px',
-                                border: isRecordingMode ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                                boxShadow: isRecordingMode ? 'none' : '0 30px 60px -20px rgba(0, 0, 0, 0.9)'
+                                borderRadius: (isRecordingMode || isLiveSyncMode) ? '0px' : '16px',
+                                border: (isRecordingMode || isLiveSyncMode) ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: (isRecordingMode || isLiveSyncMode) ? 'none' : '0 30px 60px -20px rgba(0, 0, 0, 0.9)'
                             }}
                         >
                             
@@ -640,13 +763,15 @@
                             </div>
 
                             {/* Barra de Progresso do Editor */}
-                            <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
-                                <div ref={previewProgressBarRef} className="h-full bg-brand-rust shadow-[0_0_15px_rgba(192,90,42,0.9)] transition-all duration-300" style={{ width: '0%' }}></div>
-                            </div>
+                            {!isLiveSyncMode && (
+                                <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
+                                    <div ref={previewProgressBarRef} className="h-full bg-brand-rust shadow-[0_0_15px_rgba(192,90,42,0.9)] transition-all duration-300" style={{ width: '0%' }}></div>
+                                </div>
+                            )}
 
                         </div>
                         
-                        {/* MODAL DE EDIÇÃO DE TIMING */}
+                        {/* MODAL DE EDIÇÃO DE TIMING (Manual) */}
                         {isTimingEditorOpen && (
                             <div className="absolute inset-4 z-[150] bg-[#0a0a0a]/95 backdrop-blur-md rounded-2xl border border-white/10 p-6 flex flex-col shadow-2xl flex-1 max-w-4xl mx-auto hidden sm:flex">
                                 <div className="flex justify-between items-center mb-6">
@@ -656,7 +781,7 @@
                                         </h2>
                                         <p className="text-xs text-neutral-400 mt-1">Ajuste o tempo exato (em segundos) em que cada linha inicia e desaparece.</p>
                                     </div>
-                                    <button onClick={() => setIsTimingEditorOpen(false)} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-colors">FECHAR EDITOR</button>
+                                    <button onClick={() => setIsTimingEditorOpen(false)} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-colors border border-white/10">FECHAR EDITOR</button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                                     {subtitles.map((sub) => (
@@ -671,7 +796,7 @@
                                                         step="0.1"
                                                         value={Number(sub.start).toString()}
                                                         onChange={(e) => updateSubtitleTime(sub.id, 'start', e.target.value)}
-                                                        className="w-[72px] bg-black/50 border border-white/10 rounded-md px-2 py-1.5 text-brand-sand text-sm font-mono text-center focus:outline-none focus:border-brand-sand"
+                                                        className="w-[72px] bg-black/50 border border-white/10 rounded-md px-2 py-1.5 text-brand-sand text-sm font-mono text-center focus:outline-none focus:border-brand-sand transition-colors"
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-2">
@@ -681,7 +806,7 @@
                                                         step="0.1"
                                                         value={Number(sub.end).toString()}
                                                         onChange={(e) => updateSubtitleTime(sub.id, 'end', e.target.value)}
-                                                        className="w-[72px] bg-black/50 border border-white/10 rounded-md px-2 py-1.5 text-brand-sand text-sm font-mono text-center focus:outline-none focus:border-brand-sand"
+                                                        className="w-[72px] bg-black/50 border border-white/10 rounded-md px-2 py-1.5 text-brand-sand text-sm font-mono text-center focus:outline-none focus:border-brand-sand transition-colors"
                                                     />
                                                 </div>
                                             </div>
