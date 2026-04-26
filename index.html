@@ -158,16 +158,33 @@
             "Quero voltar. No mesmo sonho. E quem encontra você."
         ];
 
-        // GERADOR DINÂMICO DE TEMPO DE LEGENDA
+        // GERADOR DINÂMICO DE TEMPO DE LEGENDA (Ajustado para 70 BPM e Início aos 14s)
+        const BPM = 70;
+        const BEAT_DURATION = 60 / BPM; // ~0.857 segundos por batida
+        
         const totalChars = lyricsText.reduce((acc, line) => acc + line.length, 0);
-        let accumulatedTime = 1.0; 
+        let accumulatedTime = 14.0; // A letra começa exatamente aos 14 segundos
         
         const initialSubtitleData = lyricsText.map((text, index) => {
-            const duration = (text.length / totalChars) * (VIDEO_DURATION - 8 - (lyricsText.length * 0.3)); 
+            // Intervalo de 1 batida (beat) exata entre as frases para casar com o ritmo
+            const gap = BEAT_DURATION; 
+            
+            // Tempo total disponível (Duração - 14s de intro - 5s de final - pausas)
+            const availableTime = VIDEO_DURATION - 14.0 - 5.0 - (lyricsText.length * gap);
+            
+            // Duração proporcional ao tamanho da frase
+            const duration = (text.length / totalChars) * availableTime; 
             const start = accumulatedTime;
             const end = start + duration;
-            accumulatedTime = end + 0.3; 
-            return { id: index + 1, start, end, text };
+            
+            accumulatedTime = end + gap; // Adiciona o gap rítmico para a próxima frase
+            
+            return { 
+                id: index + 1, 
+                start: parseFloat(start.toFixed(2)), 
+                end: parseFloat(end.toFixed(2)), 
+                text 
+            };
         });
 
         const keywords = ['quebrada', 'lembranças', 'passado', 'voltar', 'viver', 'sonho', 'memória', 'história', 'saudade', 'tradição', 'ilusão', 'coração', 'respeito', 'amizade', 'fatalidade', 'coragem', 'heroína', 'destino', 'população', 'reino', 'luto', 'briga', 'tristeza'];
@@ -183,6 +200,7 @@
             const [subtitles, setSubtitles] = useState(initialSubtitleData);
             
             const videoRef = useRef(null);
+            const zoomWrapperRef = useRef(null); // Ref separada para o Zoom (Evita congelar o vídeo)
             const fileInputRef = useRef(null);
             const timeRef = useRef(0);
             const activeSubRef = useRef(null);
@@ -193,6 +211,14 @@
             useEffect(() => {
                 subtitlesRef.current = subtitles;
             }, [subtitles]);
+
+            // Força o vídeo a recarregar quando fazemos o upload de um ficheiro novo
+            useEffect(() => {
+                if (localVideoUrl && videoRef.current) {
+                    videoRef.current.load();
+                    resetTime();
+                }
+            }, [localVideoUrl]);
 
             const updateSubtitleTime = (id, field, value) => {
                 const numValue = parseFloat(value);
@@ -208,12 +234,12 @@
             // DISTRIBUIÇÃO DINÂMICA DAS LEGENDAS NO ECRÃ
             const getLayoutForSubtitle = (id) => {
                 const layouts = [
-                    { container: 'items-start justify-start', text: 'text-left w-full md:w-[70%]' },         // 1. Canto Sup Esq
-                    { container: 'items-center justify-center', text: 'text-center w-full md:w-[85%]' },    // 2. Centro
-                    { container: 'items-end justify-end', text: 'text-right w-full md:w-[75%]' },           // 3. Canto Inf Dir
-                    { container: 'items-start justify-end', text: 'text-right w-full md:w-[65%]' },         // 4. Canto Sup Dir
-                    { container: 'items-end justify-start', text: 'text-left w-full md:w-[65%]' },          // 5. Canto Inf Esq
-                    { container: 'items-center justify-start', text: 'text-left w-full md:w-[70%] ml-[5%]' }, // 6. Centro Esquerda
+                    { container: 'items-start justify-start', text: 'text-left w-full md:w-[70%]' },         
+                    { container: 'items-center justify-center', text: 'text-center w-full md:w-[85%]' },    
+                    { container: 'items-end justify-end', text: 'text-right w-full md:w-[75%]' },           
+                    { container: 'items-start justify-end', text: 'text-right w-full md:w-[65%]' },         
+                    { container: 'items-end justify-start', text: 'text-left w-full md:w-[65%]' },          
+                    { container: 'items-center justify-start', text: 'text-left w-full md:w-[70%] ml-[5%]' }, 
                 ];
                 return layouts[(id - 1) % layouts.length];
             };
@@ -253,7 +279,6 @@
                 if (file) {
                     const url = URL.createObjectURL(file);
                     setLocalVideoUrl(url);
-                    resetTime();
                 }
             };
 
@@ -281,8 +306,9 @@
                             hudTimeRef.current.innerText = `${minutes}:${seconds.padStart(5, '0')}s`;
                         }
                         
-                        if (videoRef.current) {
-                            videoRef.current.style.transform = `scale(${getZoomLevel(time)})`;
+                        // Atualiza o zoom no contentor (e não diretamente no vídeo)
+                        if (zoomWrapperRef.current) {
+                            zoomWrapperRef.current.style.transform = `scale(${getZoomLevel(time)})`;
                         }
 
                         const sub = subtitlesRef.current.find(s => time >= s.start && time <= s.end) || null;
@@ -340,11 +366,10 @@
             return (
                 <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
                     <style>{`
-                        /* COLOR GRADING GOLDEN HOUR & GRUNGE (Mais luz natural, menos sombra artificial) */
+                        /* COLOR GRADING GOLDEN HOUR & GRUNGE */
                         .color-graded-video {
                             filter: contrast(1.15) brightness(1.1) saturate(1.4) sepia(0.3) hue-rotate(-5deg);
-                            transform-origin: center center; 
-                            will-change: transform;
+                            will-change: filter;
                         }
                         
                         /* VINHETA MAIS SUAVE E QUENTE */
@@ -548,14 +573,18 @@
                             
                             {/* CAMADA DE VÍDEO & EFEITOS GRUNGE/GOLDEN */}
                             <div className={`absolute inset-0 w-full h-full bg-[#111] z-0 transition-opacity duration-1000 opacity-100 overflow-hidden`}>
-                                <video
-                                    ref={videoRef}
-                                    src={localVideoUrl}
-                                    className="absolute inset-0 w-full h-full object-cover color-graded-video"
-                                    playsInline
-                                    preload="auto"
-                                    loop
-                                />
+                                
+                                {/* O ZOOM AGORA ACONTECE NUMA DIV (Resolve o congelamento) */}
+                                <div ref={zoomWrapperRef} className="absolute inset-0 w-full h-full will-change-transform transform-gpu origin-center">
+                                    <video
+                                        ref={videoRef}
+                                        src={localVideoUrl}
+                                        className="absolute inset-0 w-full h-full object-cover color-graded-video"
+                                        playsInline
+                                        preload="auto"
+                                        loop
+                                    />
+                                </div>
                                 
                                 {/* Filtros Vibe */}
                                 <div className="light-leak"></div>
@@ -575,7 +604,7 @@
                                                 const cleanWord = word.replace(/[\.,!\?]/g, '').toLowerCase();
                                                 const isKeyword = keywords.map(k => k.toLowerCase()).includes(cleanWord);
                                                 
-                                                // Estilos baseados no tipo de palavra (AGORA BEM MAIS PEQUENO E DELICADO)
+                                                // Estilos baseados no tipo de palavra
                                                 const fontFamilyClass = isKeyword ? 'font-display uppercase' : 'font-grunge';
                                                 const textSizeClass = isKeyword 
                                                     ? 'text-[24px] sm:text-[32px] md:text-[42px] lg:text-[50px] leading-[0.9] tracking-widest drop-shadow-[2px_3px_0px_rgba(0,0,0,0.8)] mx-1.5' 
