@@ -159,34 +159,61 @@
             "Quero voltar. No mesmo sonho. E quem encontra você."
         ];
 
-        // GERADOR DINÂMICO DE TEMPO DE LEGENDA (Ajustado para 70 BPM e Início aos 14.19s)
-        const BPM = 70;
-        const BEAT_DURATION = 60 / BPM; // ~0.857 segundos por batida
+        // TEMPOS INICIAIS BASEADOS NA SINCRONIA MANUAL (Das imagens do utilizador)
+        const manualTimings = [
+            [13.52, 19.82], [19.92, 25.97], [26.07, 27.66], [27.76, 33.40], [33.50, 40.92],
+            [41.02, 49.01], [49.11, 54.80], [54.90, 62.17], [62.27, 69.99], [70.09, 73.72],
+            [73.82, 77.13], [77.23, 80.58], [80.68, 83.97], [84.07, 87.00], [87.10, 89.33],
+            [89.43, 93.85], [93.95, 97.33], [97.43, 100.70], [100.80, 104.30], [104.40, 107.40],
+            [107.50, 111.50], [111.60, 114.70], [114.80, 117.80], [117.90, 121.20], [121.30, 124.00],
+            [124.10, 131.40], [131.50, 140.60], [140.70, 153.00], [153.10, 156.20], [156.30, 159.40],
+            [159.50, 162.90]
+        ];
+
+        // GERADOR DINÂMICO DE TEMPO DE LEGENDA PARA O RESTO DO VÍDEO
+        const remainingLyrics = lyricsText.slice(manualTimings.length);
         
-        const charsWithoutFirst = lyricsText.slice(1).reduce((acc, line) => acc + line.length, 0);
-        let accumulatedTime = 19.00 + BEAT_DURATION; 
-        
-        const initialSubtitleData = lyricsText.map((text, index) => {
-            const gap = BEAT_DURATION; 
-            let start, end;
-            
-            if (index === 0) {
-                start = 14.19;
-                end = 19.00;
-            } else {
-                start = accumulatedTime;
-                const availableTime = VIDEO_DURATION - 19.00 - 5.0 - ((lyricsText.length - 1) * gap);
-                const duration = (text.length / charsWithoutFirst) * availableTime; 
-                end = start + duration;
-                accumulatedTime = end + gap;
+        // Função para dar mais "tempo" aos refrões, que são cantados de forma mais lenta
+        const getWeight = (txt) => {
+            const t = txt.toLowerCase();
+            if (t.includes('voltar') || t.includes('máquina do tempo') || t.includes('mesmo sonho')) {
+                return txt.length * 2.5; // Refrões duram 2.5x mais por caractere
             }
-            
-            return { 
-                id: index + 1, 
-                start: parseFloat(start.toFixed(2)), 
-                end: parseFloat(end.toFixed(2)), 
-                text 
-            };
+            return txt.length;
+        };
+        
+        const totalRemainingWeight = remainingLyrics.reduce((acc, line) => acc + getWeight(line), 0);
+        
+        let accumulatedTime = 163.00; // Tempo de partida logo após a última legenda manual
+        const targetEndTime = 425.00; // Fim projetado antes dos 7min e 10s (430s) para respiro
+        const availableTime = targetEndTime - accumulatedTime;
+        const gap = 0.10; // Intervalo de 100ms para manter a fluidez idêntica à manual
+
+        const initialSubtitleData = lyricsText.map((text, index) => {
+            if (index < manualTimings.length) {
+                // Usa as marcações exatas enviadas pelo utilizador nas imagens
+                return {
+                    id: index + 1,
+                    start: manualTimings[index][0],
+                    end: manualTimings[index][1],
+                    text
+                };
+            } else {
+                // Adivinha (extrapola) o timing do resto da música usando pesos rítmicos
+                const weight = getWeight(text);
+                const duration = (weight / totalRemainingWeight) * (availableTime - (remainingLyrics.length * gap));
+                
+                const start = accumulatedTime;
+                const end = start + duration;
+                accumulatedTime = end + gap;
+                
+                return {
+                    id: index + 1,
+                    start: parseFloat(start.toFixed(2)),
+                    end: parseFloat(end.toFixed(2)),
+                    text
+                };
+            }
         });
 
         const keywords = ['quebrada', 'lembranças', 'passado', 'voltar', 'viver', 'sonho', 'memória', 'história', 'saudade', 'tradição', 'ilusão', 'coração', 'respeito', 'amizade', 'fatalidade', 'coragem', 'heroína', 'destino', 'população', 'reino', 'luto', 'briga', 'tristeza'];
